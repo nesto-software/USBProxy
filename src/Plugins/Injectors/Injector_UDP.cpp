@@ -90,10 +90,10 @@ void Injector_UDP::get_packets(Packet** packet,SetupPacket** setup,int timeout) 
 				memcpy(usbbuf,buf+11,ctrl_req.wLength);
 				*setup=new SetupPacket(ctrl_req,usbbuf,true);
 			}
-			(*setup)->filter_out=~(buf[1]&0x01);
-			(*setup)->transmit_out=~(buf[1]&0x02);
-			(*setup)->filter_in=~(buf[1]&0x04);
-			(*setup)->transmit_in=~(buf[1]&0x08);
+			(*setup)->filter_out = (buf[1] & 0x01) == 0x01 ? false : true;
+			(*setup)->transmit_out = (buf[1] & 0x02) == 0x02 ? false : true;
+			(*setup)->filter_in = (buf[1] & 0x04) == 0x04 ? false : true;
+			(*setup)->transmit_in = (buf[1] & 0x08) == 0x08 ? false : true;
 			return;
 		}
 	}
