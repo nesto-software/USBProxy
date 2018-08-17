@@ -44,7 +44,6 @@ static char *gadgetfs_path;
 void clean_tmp() {
 	DIR *dir;
 	struct dirent *entry;
-	struct dirent *result;
 	int i;
 	char **rmDirs=NULL;
 	int rmCount=0;
@@ -52,16 +51,9 @@ void clean_tmp() {
 	dir = opendir("/tmp");
 	if (!dir) return;
 
-	//fprintf(stderr,"cleaning up /tmp\n");
+	fprintf(stderr,"cleaning up /tmp\n");
 
-	if (!entry) {
-		closedir (dir);
-		return;
-	}
-
-	while(1) {
-		if (readdir_r(dir, entry, &result)) break;
-		if (!result) {break;}
+	while((entry = readdir(dir)) != NULL) {
 		if (strlen(entry->d_name)==13 && strncmp(entry->d_name,"gadget-",7)==0) {
 			rmCount++;
 			if (rmDirs) {
@@ -72,7 +64,8 @@ void clean_tmp() {
 			rmDirs[rmCount-1]=strdup(entry->d_name);
 		}
 	}
-	//fprintf(stderr,"removing %d\n",rmCount);
+
+	fprintf(stderr,"removing %d\n",rmCount);
 	for (i=0;i<rmCount;i++) {
 		char buf[20]={0x0};
 		strcat(buf,"/tmp/");
@@ -178,7 +171,6 @@ const char * find_gadget_filename()
 	const char *filename = NULL;
 	DIR *dir;
 	struct dirent *entry;
-	struct dirent *result;
 	int i;
 
 	static const char *devices[] = {
@@ -212,17 +204,12 @@ const char * find_gadget_filename()
 	if (!dir)
 		return NULL;
 
-
-	//fprintf(stderr,"searching in [%s]\n",gadgetfs_path);
-
-	if (!entry) {
-		closedir (dir);
-		return NULL;
-	}
+	fprintf(stderr,"searching in [%s]\n",gadgetfs_path);
 
 	while(1) {
-		if (readdir_r(dir, entry, &result)) break;
-		if (!result) {
+		entry = readdir(dir);
+
+		if (!entry) {
 			fprintf(stderr,"%s device file not found.\n", gadgetfs_path);
 			break;
 		}
@@ -231,7 +218,6 @@ const char * find_gadget_filename()
 		if (devices[i]) {filename = devices[i] ;break;}
 	}
 
-	free(entry);
 	closedir(dir);
 
 	return filename;
