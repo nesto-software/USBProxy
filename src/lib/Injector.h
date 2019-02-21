@@ -16,13 +16,14 @@
 class Injector {
 private:
 
-	PacketQueue* outQueues[16];
-	PacketQueue* inQueues[16];
+
 	int outPollIndex[16];
 	int inPollIndex[16];
 	std::atomic_bool _please_stop;
 
 protected:
+        PacketQueue* outQueues[16];
+	PacketQueue* inQueues[16];
 	//---------------------------------------------------------------------
 	/// \brief gets new packets from injector pipe
 	///
@@ -89,11 +90,14 @@ public:
 	//---------------------------------------------------------------------
 	/// \brief main list loop
 	///
-	/// This function is created as a task created by the Manager Class.
+	/// This function is  a task created by the Manager Class.
 	/// The function polls for new packets to be injectied from the injector
-	/// pipe using get_packets.
+	/// pipe using get_packets.  This is for support of legacy injector
+	/// Pugins.  Removing the pipes and directly injecting the data into the
+	/// queue with outQueues[x].prioretyEnque dramatically (orders of
+	/// magnitute) reduces the latencies in the system.
 	//---------------------------------------------------------------------
-	void listen();
+	virtual void listen();
 
 	virtual const char* toString() {return "Injector";}
 
