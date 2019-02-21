@@ -72,6 +72,8 @@ RelayWriter::~RelayWriter() {
 	delete sock;
 }
 
+
+
 void RelayWriter::relay_write_setup() {
 	if (!deviceProxy) {
 		fprintf(stderr,"DeviceProxy not initialized for EP00 writer.\n");
@@ -96,6 +98,7 @@ void RelayWriter::relay_write_setup() {
 	fprintf(stderr,"Starting setup writer thread (%ld) for EP%02x.\n",gettid(),endpoint);
 	while (!_please_stop) {
 		p = _recvQueue->dequeue();
+
 		if (_please_stop)
 			break;
 		if (!p)
@@ -105,9 +108,11 @@ void RelayWriter::relay_write_setup() {
 			continue;
 		//int sendQueue=events[i].data.u64&(__u64)0xffffffff;
 		//s->source=sendQueue; TODO
-		for(j=0; j<filters.size() && s->filter_out; j++)
-			if (filters[j]->test_setup_packet(s, true))
-				filters[j]->filter_setup_packet(s, true);
+		if (s->filter) {
+			for(j=0; j<filters.size() && s->filter_out; j++)
+				if (filters[j]->test_setup_packet(s, true))
+					filters[j]->filter_setup_packet(s, true);
+		}
 		ctrl_req=s->ctrl_req;
 		if (!s->transmit_out)
 			continue;
@@ -146,11 +151,15 @@ void RelayWriter::relay_write() {
 			p = _recvQueue->dequeue();
 			if (!p)
 				continue;
-			for(size_t j=0; j<filters.size(); j++) {
-				if (filters[j]->test_packet(p.get())) {
-					filters[j]->filter_packet(p.get(), sock);
+
+			if (p->filter) {
+				for(size_t j=0; j<filters.size(); j++) {
+					if (filters[j]->test_packet(p.get())) {
+						filters[j]->filter_packet(p.get());
+					}
 				}
 			}
+
 			if (p->transmit) {
 				proxy->send_data(endpoint,attributes,maxPacketSize,p->data,p->wLength);
 				writing=true;
