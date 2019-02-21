@@ -288,23 +288,8 @@ void Manager::start_control_relaying(){
 		if (status!=USBM_SETUP) {stop_relaying();return;}
 		if (injectors[i]->device.test(device)) {
 			if (out_endpoints[0] && injectors[i]->endpoint.test(out_endpoints[0])) {
-/*
-				mqname = "/USBProxy(" + std::to_string(getpid()) + ")-00-" + shex(i);
-				mqd_t mq_out=mq_open(mqname.c_str(),O_RDWR | O_CREAT,S_IRWXU,&mqa);
-				if (mq_out == -1) {
-					std::cerr << "Error creating message queue '" << mqname << "'!\n";
-					exit(1);
-				}
-				mqname = "/USBProxy(" + std::to_string(getpid()) + ")-80-" + shex(i);
-				mqd_t mq_in=mq_open(mqname.c_str(),O_RDWR | O_CREAT,S_IRWXU,&mqa);
-				if (mq_in == -1) {
-					std::cerr << "Error creating message queue '" << mqname << "'!\n";
-					exit(1);
-				}
-*/
-				// injectors[i]->set_queue(0x80,mq_in); // TODO
-				//out_writers[0]->set_send_queue(mq_in); // TODO
-				//injectors[i]->set_queue(0, out_writers[0]->get_recv_queue()); // TODO
+				injectors[i]->set_queue(0x80, _writersend);
+				injectors[i]->set_queue(0, out_writers[0]->get_recv_queue());
 			}
 		}
 	}
@@ -418,28 +403,10 @@ void Manager::start_data_relaying() {
 		if (injectors[i]->device.test(device) && injectors[i]->configuration.test(cfg)) {
 			for (j=1;j<16;j++) {
 				if (in_endpoints[j] && injectors[i]->endpoint.test(in_endpoints[j]) && injectors[i]->interface.test(in_endpoints[j]->get_interface())) {
-/*
-					mqname = "/USBProxy(" + std::to_string(getpid()) + ")-" + shex(j|0x80) + '-' + shex(i);
-					mqd_t mq=mq_open(mqname.c_str(),O_RDWR | O_CREAT,S_IRWXU,&mqa);
-					if (mq == -1) {
-						std::cerr << "Error creating message queue '" << mqname << "'!\n";
-						exit(1);
-					}
-*/
-					//injectors[i]->set_queue(j|0x80,mq); TODO
-					//in_writers[j]->add_queue(mq); // TODO
+					injectors[i]->set_queue(j|0x80,in_writers[j]->get_recv_queue());
 				}
 				if (out_endpoints[j] && injectors[i]->endpoint.test(out_endpoints[j]) && injectors[i]->interface.test(out_endpoints[j]->get_interface())) {
-/*
-					mqname = "/USBProxy(" + std::to_string(getpid()) + ")-" + shex(j) + '-' + shex(i);
-					mqd_t mq=mq_open(mqname.c_str(),O_RDWR | O_CREAT,S_IRWXU,&mqa);
-					if (mq == -1) {
-						std::cerr << "Error creating message queue '" << mqname << "'!\n";
-						exit(1);
-					}
-*/
-					//injectors[i]->set_queue(j,mq); // TODO
-					// out_writers[j]->add_queue(mq); // TODO
+					injectors[i]->set_queue(j,out_writers[j]->get_recv_queue());
 				}
 			}
 		}
