@@ -35,8 +35,9 @@ protected:
 	///
 	/// \Note	It is the responsibility of the calling routine to
 	///		destroy the packet contents.
+	/// \Note	This is a legacy routine to support old injectors
 	//---------------------------------------------------------------------
-	virtual void get_packets(Packet** packet, SetupPacket** setup, int timeout=500)=0;
+	virtual void get_packets(Packet** packet, SetupPacket** setup, int timeout=500) {}
 	//---------------------------------------------------------------------
 	//---------------------------------------------------------------------
 	virtual void start_injector() {}
@@ -57,6 +58,7 @@ protected:
 	///
 	/// \return pointer to a zero terminated list of file descriptors used
 	///         by get_packets();
+	/// /// \Note	This is a legacy routine to support old injectors
 	//---------------------------------------------------------------------
 	virtual int* get_pollable_fds() {return NULL;}
 	//---------------------------------------------------------------------

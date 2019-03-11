@@ -13,11 +13,11 @@
 #define SLEEP_US 1000
 
 Injector::Injector()
-	: outQueues{},
-	  inQueues{},
-	  outPollIndex{},
+	: outPollIndex{},
 	  inPollIndex{},
-	  _please_stop(false)
+	  _please_stop(false),
+	  outQueues{},
+	  inQueues{}
 {}
 
 void Injector::set_queue(__u8 epAddress, PacketQueue& queue) {
@@ -29,6 +29,7 @@ void Injector::set_queue(__u8 epAddress, PacketQueue& queue) {
 }
 
 void Injector::listen() {
+#if 0
 	bool idle;
 	fprintf(stderr,"Starting injector thread (%ld) for [%s].\n",gettid(),this->toString());
 	start_injector();
@@ -75,8 +76,7 @@ void Injector::listen() {
 						PacketQueue* queue =(epAddress&0x80)?inQueues[epAddress&0x0f]:outQueues[epAddress&0x0f];
 						if (queue) { //if queue defined for this EP, attempt to send
 							//queue->enqueue(packet);
-							PacketPtr p = std::make_shared<Packet>(*packet);
-							queue->enqueuePriority(p);
+							queue->enqueuePriority(std::make_shared<Packet>(*packet));
 
 							packet->data = nullptr;
 							delete packet;
@@ -95,4 +95,5 @@ void Injector::listen() {
 	stop_injector();
 	fprintf(stderr,"Finished injector thread (%ld) for [%s].\n",gettid(),this->toString());
 	_please_stop = false;
+#endif
 }

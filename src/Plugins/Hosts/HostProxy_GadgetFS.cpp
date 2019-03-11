@@ -95,7 +95,7 @@ int HostProxy_GadgetFS::generate_descriptor(Device* device) {
 			    char* pointer = (char*) buf;
 			    pointer += buf->bLength;    //move to end of cfg desc
 
-			    for(unsigned int k=0;k<buf->bNumInterfaces;k++){    
+			    for(unsigned int k=0;k<buf->bNumInterfaces;k++){
 				//move to end of intf desc
 				pointer += cfg->get_interface(k)->get_descriptor()->bLength;
 
@@ -111,7 +111,8 @@ int HostProxy_GadgetFS::generate_descriptor(Device* device) {
 				    usb_endpoint_descriptor* epd = (usb_endpoint_descriptor*) pointer;
 
 				    // conversion is: newValue = log2(8*oldValue)+1
-				    int newValue = (log10(8*(epd->bInterval))/log10(2)) + 1;
+
+				    uint8_t newValue = (log10(8*(epd->bInterval))/log10(2)) + 1;
 				    fprintf(stderr,"old bInterval: %02X\ncalculated new bInterval: %02X\n",epd->bInterval,newValue);
 				    memset(&epd->bInterval,newValue,1);
 				    pointer+= epd->bLength;
@@ -223,7 +224,7 @@ void HostProxy_GadgetFS::disconnect() {
 	}
 
 	unmount_gadget();
-	
+
 	p_is_connected = false;
 }
 
@@ -555,7 +556,7 @@ extern "C" {
 		proxy = new HostProxy_GadgetFS(cfg);
 		return (HostProxy *) proxy;
 	}
-	
+
 	void destroy_plugin() {
 		delete proxy;
 	}
