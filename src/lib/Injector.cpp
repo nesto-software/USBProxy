@@ -29,7 +29,6 @@ void Injector::set_queue(__u8 epAddress, PacketQueue& queue) {
 }
 
 void Injector::listen() {
-#if 0
 	bool idle;
 	fprintf(stderr,"Starting injector thread (%ld) for [%s].\n",gettid(),this->toString());
 	start_injector();
@@ -95,5 +94,4 @@ void Injector::listen() {
 	stop_injector();
 	fprintf(stderr,"Finished injector thread (%ld) for [%s].\n",gettid(),this->toString());
 	_please_stop = false;
-#endif
 }
