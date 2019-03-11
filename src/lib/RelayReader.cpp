@@ -129,6 +129,8 @@ void RelayReader::relay_read() {
 		proxy->receive_data(endpoint,attributes,maxPacketSize,&buf,&length, READ_TIMEOUT_MS);
 		if (length)
 			_sendQueue->enqueue(std::make_shared<Packet>(endpoint, buf, length));
+	        else
+	            free(buf);
 	}
 	fprintf(stderr,"Finished reader thread (%ld) for EP%02x.\n",gettid(),endpoint);
 	_please_stop = false;
