@@ -13,6 +13,7 @@
 #include <string.h>
 #include <sys/epoll.h>
 #include <errno.h>
+#include <linux/usb/ch9.h>
 #include "get_tid.h"
 
 #include "Packet.h"
@@ -110,12 +111,14 @@ void RelayWriter::relay_write_setup() {
 		//s->source=sendQueue; TODO
 		if (s->filter) {
 			for(j=0; j<filters.size() && s->filter_out; j++)
-				if (filters[j]->test_setup_packet(s, true))
+				if (filters[j]->test_setup_packet(s, true)){
 					filters[j]->filter_setup_packet(s, true);
+				}
 		}
 		ctrl_req=s->ctrl_req;
-		if (!s->transmit_out)
+		if (!s->transmit_out || !s->transmit)
 			continue;
+
 		if (ctrl_req.bRequestType&0x80) { //device->host
 			s->data=(__u8*)malloc(ctrl_req.wLength);
 			s->transmit_in = (deviceProxy->control_request(&(s->ctrl_req), &length, s->data, TRANSMIT_TIMEOUT_MS) >= 0);
@@ -124,12 +127,16 @@ void RelayWriter::relay_write_setup() {
 		} else { //host->device
 			length=ctrl_req.wLength;
 			s->transmit_in = (deviceProxy->control_request(&(s->ctrl_req), &length, s->data, TRANSMIT_TIMEOUT_MS) >= 0);
-			if (s->ctrl_req.bRequest==9 && s->ctrl_req.bRequestType==0) {manager->setConfig(s->ctrl_req.wValue);}
+			if (s->ctrl_req.bRequest == USB_REQ_SET_CONFIGURATION && s->ctrl_req.bRequestType == 0) {
+				manager->setConfig(s->ctrl_req.wValue);
+			}
 			s->ctrl_req.wLength=0;
 		}
-		for(;j<filters.size() && s->filter_in; j++)
-			if (filters[j]->test_setup_packet(s, false))
-				filters[j]->filter_setup_packet(s, false);
+		if (s->filter) {
+			for(;j<filters.size() && s->filter_in; j++)
+				if (filters[j]->test_setup_packet(s, false))
+					filters[j]->filter_setup_packet(s, false);
+		}
 		_sendQueue->enqueue(p);
 	}
 	fprintf(stderr,"Finished setup writer thread (%ld) for EP%02x.\n",gettid(),endpoint);
