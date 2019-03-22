@@ -121,16 +121,31 @@ void RelayReader::relay_read() {
 
 	__u8* buf;
 	int length;
-
+	unsigned nullCount = 0;
 	fprintf(stderr,"Starting reader thread (%ld) for EP%02x.\n",gettid(),endpoint);
 	while (!_please_stop) {
-		buf=NULL;
-		length=0;
+		buf = nullptr;
+		length = 0;
+
 		proxy->receive_data(endpoint,attributes,maxPacketSize,&buf,&length, READ_TIMEOUT_MS);
-		if (length)
+		if(length)  {
 			_sendQueue->enqueue(std::make_shared<Packet>(endpoint, buf, length));
-	        else
-	            free(buf);
+#if 1
+			nullCount = 0;
+		} else if (nullptr != buf) {
+			if ((nullCount /*% 0x1000*/) == 0) {
+				std::cout << "nullCount = " << nullCount << std::endl;
+				_sendQueue->enqueue(std::make_shared<Packet>(endpoint, buf, length));
+				++nullCount;
+			} else {
+				++nullCount;
+				free(buf);
+			}
+
+		} else {
+			free(buf);
+#endif
+		}
 	}
 	fprintf(stderr,"Finished reader thread (%ld) for EP%02x.\n",gettid(),endpoint);
 	_please_stop = false;
