@@ -53,7 +53,9 @@ void Injector::listen() {
 			for(i=0;i<pollreadcount;i++) {
 				// note the following is a bit strange to handle
 				// oddities with keeping legacy injectors
-				// compatible with the shared pointers
+				// compatible with the shared pointers.  New
+				// injectors may (should?) place data directly
+				// into the queue->enqueuePriority queues
 				if (poll_list[i].revents & POLLIN) {
 					get_packets(&packet,&setup,500);
 					if (setup) {

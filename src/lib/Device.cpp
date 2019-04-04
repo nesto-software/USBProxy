@@ -25,9 +25,9 @@ Device::Device(DeviceProxy* _proxy) {
 	hostConfigurationIndex=-1;
 	hostAddress=-1;
 	hostState=USB_STATE_NOTATTACHED;
-    maxStringIdx=0;
+	maxStringIdx=0;
 
-    proxy=_proxy;
+	proxy=_proxy;
 	__u8 buf[18];
 	usb_ctrlrequest setup_packet;
 	setup_packet.bRequestType=USB_DIR_IN | USB_TYPE_STANDARD | USB_RECIP_DEVICE;
@@ -63,7 +63,7 @@ Device::Device(DeviceProxy* _proxy) {
 		for (j=0;j<configurations[i]->get_descriptor()->bNumInterfaces;j++) {
 			int k;
 			for (k=0;k<configurations[i]->get_interface_alternate_count(j);k++) {
-				
+
 				// modified 20140903 atsumi@aizulab.com
 				// begin
 				if ( configurations[i]->get_interface_alternate(j,k)) {
@@ -78,7 +78,6 @@ Device::Device(DeviceProxy* _proxy) {
 			}
 		}
 	}
-
 	qualifier=new DeviceQualifier(this,proxy);
 
 	//not a high speed device
@@ -86,10 +85,10 @@ Device::Device(DeviceProxy* _proxy) {
 		delete(qualifier);
 		qualifier=NULL;
 	}
-
 	deviceState=USB_STATE_DEFAULT;
 	deviceAddress=proxy->get_address();
 	highspeed=proxy->is_highspeed();
+
 	if (deviceAddress) {
 		setup_packet.bRequestType=USB_DIR_IN | USB_TYPE_STANDARD | USB_RECIP_DEVICE;
 		setup_packet.bRequest=USB_REQ_GET_CONFIGURATION;
@@ -113,10 +112,10 @@ Device::Device(const usb_device_descriptor* _descriptor) {
 	hostConfigurationIndex=-1;
 	hostAddress=-1;
 	hostState=USB_STATE_NOTATTACHED;
-    maxStringIdx=0;
-    highspeed=false;
+	maxStringIdx=0;
+	highspeed=false;
 
-    proxy=NULL;
+	proxy=NULL;
 	qualifier=NULL;
 	deviceAddress=0;
 	deviceConfigurationIndex=-1;
@@ -278,7 +277,7 @@ void Device::add_string(USBString* string) {
 				if (strings[index][i]->get_languageId()==languageId) {
 					// modified 20140902 atsumi@aizulab.com
           // There is a possibility of memory leaks
-          // delete(strings[index][i]); 
+          // delete(strings[index][i]);
 					/* not needed strings[index][i]=NULL; */
 					strings[index][i]=string;
 				}

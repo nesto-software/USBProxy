@@ -350,10 +350,8 @@ int DeviceProxy_LibUSB::control_request(const usb_ctrlrequest *setup_packet, int
 		cout << "LibUSB> " << str_hex << endl;
 		free(str_hex);
 	}
-
 	int rc = libusb_control_transfer(dev_handle, setup_packet->bRequestType, setup_packet->bRequest,
 			setup_packet->wValue, setup_packet->wIndex, dataptr, setup_packet->wLength, timeout);
-
 	if (rc < 0) {
 		if (debugLevel) {
 			cerr << "Error sending setup packet: " << libusb_strerror((libusb_error) rc) << endl;
@@ -420,7 +418,7 @@ void DeviceProxy_LibUSB::send_data(uint8_t endpoint, uint8_t attributes, uint16_
 				cerr << "Sent " << transferred << " bytes (Bulk) to libusb EP" << hex2(endpoint) << endl;
 			if ((rc == LIBUSB_ERROR_PIPE || rc == LIBUSB_ERROR_TIMEOUT))
 				libusb_clear_halt(dev_handle, endpoint);
-			
+
 			attempt++;
 		} while ((rc == LIBUSB_ERROR_PIPE || rc == LIBUSB_ERROR_TIMEOUT || transferred != length) && attempt < MAX_ATTEMPTS);
 		break;
@@ -452,12 +450,12 @@ void DeviceProxy_LibUSB::receive_data(uint8_t endpoint, uint8_t attributes, uint
 	//if (timeout < 10)
 		//timeout = 10;	//TODO: explain this!
 
-	/* 
+	/*
 	 * Infinite timeout to avoid stalling with mass storages, temporarily assigned here.
 	 * Need to check if this is useful or only do-while is needed. But for now it works.
 	 */
-	timeout = 0; 
-	
+	timeout = 0;
+
 	int attempt = 0;
 	switch (attributes & USB_ENDPOINT_XFERTYPE_MASK) {
 	case USB_ENDPOINT_XFER_CONTROL:
@@ -475,7 +473,7 @@ void DeviceProxy_LibUSB::receive_data(uint8_t endpoint, uint8_t attributes, uint
 				cerr << "received bulk msg (" << *length << " bytes)" << endl;
 			if ((rc == LIBUSB_ERROR_PIPE || rc == LIBUSB_ERROR_TIMEOUT))
 				libusb_clear_halt(dev_handle, endpoint);
-			
+
 			attempt++;
 		} while ((rc == LIBUSB_ERROR_PIPE || rc == LIBUSB_ERROR_TIMEOUT) && attempt < MAX_ATTEMPTS);
 		break;

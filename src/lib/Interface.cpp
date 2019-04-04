@@ -41,11 +41,11 @@ Interface::Interface(Configuration* _configuration,__u8** p,const __u8* e) {
 			generic_descriptors=(GenericDescriptor**)malloc(sizeof(*generic_descriptors));
 		}
 		generic_descriptors[generic_descriptor_count-1]=d;
-		
+
 		*p += **p;
 	}
 	// end
-	
+
 	// modified 20140903 atsumi@aizulab.com
 	// memcpy(&descriptor,*p,9);
 	memcpy(&descriptor,*p,**p);
@@ -226,7 +226,7 @@ void Interface::print(__u8 tabs, bool active) {
 	if (hid_descriptor) {hid_descriptor->print(tabs+1);}
 	int j=0;
 	for (j=0;j<generic_descriptor_count;j++) {
-		char* hex=hex_string((void*)generic_descriptors[j],generic_descriptors[j]->bLength);
+		hex=hex_string((void*)generic_descriptors[j],generic_descriptors[j]->bLength);
 		printf("%.*sOther(%02x): %s\n",tabs,TABPADDING,generic_descriptors[j]->bDescriptorType,hex);
 		free(hex);
 	}

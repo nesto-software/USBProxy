@@ -93,7 +93,7 @@ public:
 	/// \brief main list loop
 	///
 	/// This function is  a task created by the Manager Class.
-	/// The function polls for new packets to be injectied from the injector
+	/// The function polls for new packets to be injected from the injector
 	/// pipe using get_packets.  This is for support of legacy injector
 	/// Pugins.  Removing the pipes and directly injecting the data into the
 	/// queue with outQueues[x].prioretyEnque dramatically (orders of
