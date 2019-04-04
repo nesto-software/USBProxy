@@ -26,6 +26,8 @@ class DeviceProxy;
 class HostProxy;
 class PacketFilter;
 
+#define ALL_ENDPOINTS 0
+#define ALL_ENDPOINTS_EXCEPT_EP0 1
 
 enum Manager_status {
 	USBM_IDLE=0,
@@ -71,8 +73,11 @@ private:
 	void start_data_relaying();
 	unsigned _debug_level;
 
+	ConfigParser *cfg_;
+	uint8_t configurationNumber;
+
 public:
-	Manager(unsigned debug_level);
+	Manager(ConfigParser *);
 	virtual ~Manager();
 
 	void load_plugins(ConfigParser *cfg);
@@ -90,13 +95,16 @@ public:
 	void setConfig(__u8 index);
 
 	enum Manager_status get_status() {return status;}
+	void stopEps(unsigned start);
 
 	// modified 20140924 atsumi@aizulab.com
-  void set_status( Manager_status status_) { status = status_;}
+	void set_status( Manager_status status_) { status = status_;}
 
 	void start_control_relaying();
 	void stop_relaying();
 	void cleanup();
+	void disconnectNotification();
+	void connectNotification();
 };
 
 #endif /* USBPROXY_MANAGER_H */

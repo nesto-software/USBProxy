@@ -50,6 +50,7 @@ public:
 	void control_ack();
 	void stall_ep(__u8 endpoint);
 	void setConfig(Configuration* fs_cfg,Configuration* hs_cfg,bool hs);
+	void disconnectEp();
 };
 
 #endif /* USBPROXY_HOSTPROXY_GADGETFS_H */

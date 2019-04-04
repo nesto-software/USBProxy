@@ -26,11 +26,18 @@
 #include "RelayReader.h"
 #include "RelayWriter.h"
 #include "Injector.h"
+#include "Configuration.h"
+#include "Interface.h"
+//#include "DeviceProxy_LibUSB.h"
+//#include "HostProxy_GadgetFS.h"
+#include "SafeQueue.hpp"
 
 using namespace std;
 
-Manager::Manager(unsigned debug_level)
-	: _debug_level(debug_level)
+Manager::Manager(ConfigParser *cfg_p)
+	: _debug_level(cfg_p->debugLevel)
+	,  cfg_(cfg_p)
+	, configurationNumber(0)
 {
 	status=USBM_IDLE;
 	plugin_manager = new PluginManager();
@@ -245,7 +252,7 @@ void Manager::start_control_relaying(){
 	device->print(0);
 
 	// modified 20141007 atsumi@aizulab.com
-  // I think interfaces are claimed soon after connecting device.
+	// I think interfaces are claimed soon after connecting device.
 	//Claim interfaces
 	Configuration* cfg;
 	cfg=device->get_active_configuration();
@@ -269,7 +276,7 @@ void Manager::start_control_relaying(){
 	if (status!=USBM_SETUP) {stop_relaying();return;}
 
 	//setup EP0 Reader & Writer
-	out_readers[0]=new RelayReader(out_endpoints[0],hostProxy, _readersend, _writersend);
+	out_readers[0]=new RelayReader(out_endpoints[0],hostProxy, _readersend, _writersend,this);
 	out_writers[0]=new RelayWriter(out_endpoints[0],deviceProxy,this, _readersend, _writersend);
 
 	//apply filters to relayers
@@ -369,20 +376,19 @@ void Manager::start_data_relaying() {
 	int i,j;
 	for (i=1;i<16;i++) {
 		if (in_endpoints[i]) {
-			//RelayReader(Endpoint* _endpoint,Proxy* _proxy,mqd_t _queue);
-			in_readers[i]=new RelayReader(in_endpoints[i],(Proxy*)deviceProxy, *in_queues[i]);
-			//RelayWriter(Endpoint* _endpoint,Proxy* _proxy,mqd_t _queue);
-			//in_writers[i]=new RelayWriter(in_endpoints[i],(Proxy*)hostProxy,mq);
-			in_writers[i]=new RelayWriter(in_endpoints[i],(Proxy*)hostProxy, *in_queues[i]);
+			if (!in_readers[i])
+				in_readers[i]=new RelayReader(in_endpoints[i],(Proxy*)deviceProxy, *in_queues[i], this);
+			if(!in_writers[i])
+				in_writers[i]=new RelayWriter(in_endpoints[i],(Proxy*)hostProxy, *in_queues[i]);
 		}
 		if (out_endpoints[i]) {
-			//RelayReader(Endpoint* _endpoint,Proxy* _proxy,mqd_t _queue);
-			//out_readers[i]=new RelayReader(out_endpoints[i],(Proxy*)hostProxy,mq);
-			out_readers[i]=new RelayReader(out_endpoints[i],(Proxy*)hostProxy, *out_queues[i]);
-			//RelayWriter(Endpoint* _endpoint,Proxy* _proxy,mqd_t _queue);
-			out_writers[i]=new RelayWriter(out_endpoints[i],(Proxy*)deviceProxy, *out_queues[i]);
+			if(!out_readers[i])
+				out_readers[i]=new RelayReader(out_endpoints[i],(Proxy*)hostProxy, *out_queues[i], this);
+			if(!out_writers[i])
+				out_writers[i]=new RelayWriter(out_endpoints[i],(Proxy*)deviceProxy, *out_queues[i]);
 		}
 	}
+
 
 	//apply filters to relayers
 	for(i=0;i<filterCount;i++) {
@@ -433,37 +439,33 @@ void Manager::start_data_relaying() {
 	}
 }
 
-void Manager::stop_relaying(){
-	if (status==USBM_SETUP) {status=USBM_SETUP_ABORT;return;}
-	if (status!=USBM_RELAYING && status!=USBM_SETUP_ABORT) return;
-	status=USBM_STOPPING;
-
-	int i;
-	//signal all injector threads to stop ASAP
-	for(i=0;i<injectorCount;i++) {
-		if (injectors[i]) injectors[i]->please_stop();
+//-----------------------------------------------------------------------------
+/// \brief issues request to stop endpoint threads
+/// \param start
+///        - ALL_ENDPOINTS to stop all endpoints
+///        - ALL_ENDPOINTS_EXCEPT_EP0 to stop all endpoints except
+///          control endpoint
+//-----------------------------------------------------------------------------
+void Manager::stopEps(unsigned start)
+{
+	if (start > 1) {
+		fprintf(stderr,"error, stopEps called with start > 1\n");
 	}
 
-	//signal all relayer threads to stop ASAP
-	for(i=0;i<16;i++) {
+	unsigned i;
+	for(i=start;i<16;i++) {
 		if (in_readerThreads[i].joinable()) {in_readers[i]->please_stop();}
 		if (in_writerThreads[i].joinable()) {in_writers[i]->please_stop();}
 		if (out_readerThreads[i].joinable()) {out_readers[i]->please_stop();}
 		if (out_writerThreads[i].joinable()) {out_writers[i]->please_stop();}
 	}
-
-	//wait for all injector threads to stop
-	for (auto& i_thread: injectorThreads)
-		i_thread.join();
-	injectorThreads.clear();
-
+	hostProxy->disconnectEp();
+	std::this_thread::yield();
 
 	fprintf(stderr, "STAGE 1\n");
 
 	//wait for all relayer threads to stop, then delete relayer objects
-	for(i=0;i<16;i++) {
-		fprintf(stderr, "STAGE 1: %d\n", i);
-
+	for(i=start;i<16;i++) {
 		if (in_endpoints[i]) {in_endpoints[i]=NULL;}
 		fprintf(stderr, "in_readers length: %d\n", in_readers[i]);
 
@@ -476,7 +478,11 @@ void Manager::stop_relaying(){
 			}
 			delete(in_readers[i]);
 			in_readers[i]=NULL;
+			delete(in_queues[i]);
+			in_queues[i] = nullptr;
 		}
+
+
 		if (in_writers[i]) {
 			if (in_writerThreads[i].joinable()) {
 				in_writerThreads[i].join();
@@ -484,7 +490,6 @@ void Manager::stop_relaying(){
 			delete(in_writers[i]);
 			in_writers[i]=NULL;
 		}
-
 		if (out_endpoints[i]) {out_endpoints[i]=NULL;}
 		if (out_readers[i]) {
 			if (out_readerThreads[i].joinable()) {
@@ -492,7 +497,10 @@ void Manager::stop_relaying(){
 			}
 			delete(out_readers[i]);
 			out_readers[i]=NULL;
+			delete(out_queues[i]);
+			out_queues[i] = nullptr;
 		}
+
 		if (out_writers[i]) {
 			if (out_writerThreads[i].joinable()) {
 				out_writerThreads[i].join();
@@ -501,11 +509,6 @@ void Manager::stop_relaying(){
 			out_writers[i]=NULL;
 		}
 	}
-
-	fprintf(stderr, "STAGE 2\n");
-
-
-	if (out_endpoints[0]) {delete(out_endpoints[0]);out_endpoints[0]=NULL;}
 
 	//Release interfaces
 	int ifc_idx;
@@ -516,6 +519,29 @@ void Manager::stop_relaying(){
 			deviceProxy->release_interface(ifc_idx);
 		}
 	}
+	configurationNumber = 0;
+}
+
+void Manager::stop_relaying(){
+	if (status==USBM_SETUP) {status=USBM_SETUP_ABORT;return;}
+	if (status!=USBM_RELAYING && status!=USBM_SETUP_ABORT) return;
+	status=USBM_STOPPING;
+
+	int i;
+	//signal all injector threads to stop ASAP
+	for(i=0;i<injectorCount;i++) {
+		if (injectors[i]) injectors[i]->please_stop();
+	}
+
+	//wait for all injector threads to stop
+	for (auto& i_thread: injectorThreads)
+		i_thread.join();
+	injectorThreads.clear();
+
+	stopEps(ALL_ENDPOINTS);
+
+	// todo mse review this line is it needed?
+	if (out_endpoints[0]) {delete(out_endpoints[0]);out_endpoints[0]=NULL;}
 
 	//disconnect from host
 	hostProxy->disconnect();
@@ -534,7 +560,37 @@ void Manager::stop_relaying(){
 	status=USBM_IDLE;
 }
 
+void Manager::connectNotification()
+{
+	std::cout << "==============connect" << std::endl;
+	// Some drivers do not allow enough time for the
+	// config command to run before a timeout occurs on bulk endpoints.
+	// this is workaround to avoid that by automatically setting the
+	// coniguration to the first configuration.
+	// setConfig(1);
+}
+void Manager::disconnectNotification()
+{
+	std::cout << "==============disconnect" << std::endl;
+	stopEps(ALL_ENDPOINTS_EXCEPT_EP0);
+}
+
 void Manager::setConfig(__u8 index) {
+        if((configurationNumber != 0) && (configurationNumber != index)) {
+        	stopEps(ALL_ENDPOINTS_EXCEPT_EP0);
+        }
+
+        if (configurationNumber == index) {
+        	return;
+        }
+
+        std::cout << "changing from config " << (int)configurationNumber << " to " << (int)index << std::endl;
+        configurationNumber = index;;
+
+        if (0 == index) {
+		return;
+	}
+
 	device->set_active_configuration(index);
 	DeviceQualifier* qualifier=device->get_device_qualifier();
 	if (qualifier) {

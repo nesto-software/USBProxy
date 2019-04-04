@@ -9,6 +9,10 @@
 #include "Proxy.h"
 #include "Device.h"
 
+#define CONTROL_REQUEST_SETUP 1
+#define CONTROL_REQUEST_DISCONNECT 2
+#define CONTROL_REQUEST_CONNECT 3
+
 class HostProxy: public Proxy {
 public:
 	static const __u8 plugin_type=PLUGIN_HOSTPROXY;
@@ -37,6 +41,7 @@ public:
 
 	virtual void control_ack()=0;
 	virtual void stall_ep(__u8 endpoint)=0;
+	virtual void disconnectEp() {};
 };
 
 extern "C" {

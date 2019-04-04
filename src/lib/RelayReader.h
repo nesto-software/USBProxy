@@ -12,6 +12,7 @@
 class Proxy;
 class HostProxy;
 class Endpoint;
+class Manager;
 
 class RelayReader {
 private:
@@ -23,10 +24,11 @@ private:
 	__u8 endpoint;
 	__u8 attributes;
 	__u16 maxPacketSize;
+	Manager* manager;
 
 public:
-	RelayReader(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& sendQueue);
-	RelayReader(Endpoint* _endpoint,HostProxy* _proxy, PacketQueue& sendQueue, PacketQueue& recvQueue);
+	RelayReader(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& sendQueue, Manager* _manager);
+	RelayReader(Endpoint* _endpoint,HostProxy* _proxy, PacketQueue& sendQueue, PacketQueue& recvQueue, Manager* _manager);
 	virtual ~RelayReader();
 
 	void relay_read();

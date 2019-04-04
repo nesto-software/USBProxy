@@ -22,7 +22,10 @@
 #include "version.h"
 #include <zmq.hpp>
 
-static unsigned debug=0;
+#include  <mcheck.h>
+
+static unsigned debug;
+static int done;
 
 Manager* manager;
 zmq::context_t *ctx = new zmq::context_t();
@@ -100,7 +103,7 @@ extern "C" int main(int argc, char **argv)
 	sigaction(SIGTERM, &action, NULL);
 	sigaction(SIGHUP, &action, NULL);
 	sigaction(SIGINT, &action, NULL);
-	
+
 	ConfigParser *cfg = new ConfigParser();
 
 	while ((opt = getopt (argc, argv, "nv:p:P:D:H:dsc:C:lmik::w:hx")) != EOF) {
@@ -211,13 +214,14 @@ extern "C" int main(int argc, char **argv)
 
 	int status;
 	do {
-		manager=new Manager(debug);
+		manager=new Manager(cfg);
 		manager->load_plugins(cfg);
 		cfg->print_config();
-
+                mtrace ();
 		manager->start_control_relaying();
-		while ( ( status = manager->get_status()) == USBM_RELAYING) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+		while (!done && ((status = manager->get_status()) == USBM_RELAYING)) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(999));
 		}
 
 		frontend->close();
@@ -229,9 +233,8 @@ extern "C" int main(int argc, char **argv)
 		delete(frontend);
 		delete(backend);
 		delete(manager);
-		delete(ctx);
-	} while ( status == USBM_RESET);
-	
+	} while (!done && status == USBM_RESET);
+
 	if (keylog_output_file) {
 		fclose(keylog_output_file);
 	}

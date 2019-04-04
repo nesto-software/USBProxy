@@ -125,6 +125,7 @@ void RelayWriter::relay_write_setup() {
 			j=0;
 			s->ctrl_req.wLength=length;
 		} else { //host->device
+		        std::cout << "A" <<std::endl;
 			length=ctrl_req.wLength;
 			s->transmit_in = (deviceProxy->control_request(&(s->ctrl_req), &length, s->data, TRANSMIT_TIMEOUT_MS) >= 0);
 			if (s->ctrl_req.bRequest == USB_REQ_SET_CONFIGURATION && s->ctrl_req.bRequestType == 0) {
@@ -137,7 +138,9 @@ void RelayWriter::relay_write_setup() {
 				if (filters[j]->test_setup_packet(s, false))
 					filters[j]->filter_setup_packet(s, false);
 		}
+		std::cout << "B" <<std::endl;
 		_sendQueue->enqueue(p);
+		std::cout << "C" <<std::endl;
 	}
 	fprintf(stderr,"Finished setup writer thread (%ld) for EP%02x.\n",gettid(),endpoint);
 	_please_stop = false;
@@ -156,6 +159,10 @@ void RelayWriter::relay_write() {
 	while (!_please_stop) {
 		if (!writing) {
 			p = _recvQueue->dequeue();
+			if (_please_stop)
+			{
+				break;
+			}
 			if (!p)
 				continue;
 

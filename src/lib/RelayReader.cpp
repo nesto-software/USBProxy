@@ -17,14 +17,16 @@
 
 #include "Proxy.h"
 #include "HostProxy.h"
+#include "Manager.h"
 
 #define CTRL_REQUEST_TIMEOUT_MS 500
 #define READ_TIMEOUT_MS 1500
 
-RelayReader::RelayReader(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& sendQueue)
+RelayReader::RelayReader(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& sendQueue, Manager* _manager)
 	: _please_stop(false)
 	, _sendQueue(&sendQueue)
 	, _recvQueue(0)
+	, manager(_manager)
 {
 	proxy=_proxy;
 	hostProxy=NULL;
@@ -33,10 +35,11 @@ RelayReader::RelayReader(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& sendQue
 	maxPacketSize=_endpoint->get_descriptor()->wMaxPacketSize;
 }
 
-RelayReader::RelayReader(Endpoint* _endpoint,HostProxy* _hostProxy, PacketQueue& sendQueue, PacketQueue& recvQueue)
+RelayReader::RelayReader(Endpoint* _endpoint,HostProxy* _hostProxy, PacketQueue& sendQueue, PacketQueue& recvQueue, Manager* _manager)
 	: _please_stop(false)
 	, _sendQueue(&sendQueue)
 	, _recvQueue(&recvQueue)
+	, manager(_manager)
 {
 	proxy=NULL;
 	hostProxy=_hostProxy;
@@ -67,16 +70,32 @@ void RelayReader::relay_read_setup() {
 			buf=NULL;
 			length=0;
 
-			int is_control_req = hostProxy->control_request(&ctrl_req, &length, &buf, CTRL_REQUEST_TIMEOUT_MS);
-			if (is_control_req) {
+			int rc = hostProxy->control_request(&ctrl_req, &length, &buf, CTRL_REQUEST_TIMEOUT_MS);
+			if (_please_stop)
+				break;
+			switch (rc)
+			{
+			case CONTROL_REQUEST_SETUP:
 				p = std::make_shared<SetupPacket>(ctrl_req,buf);
-			}
-			if (!p)
+				if (!p)
+					continue;
+				_sendQueue->enqueue(p);
+				direction_out=false;
+				p.reset();
+				idle=false;
+				break;
+
+			case CONTROL_REQUEST_DISCONNECT:
+				manager->disconnectNotification(); // 1=non control eps
+				break;
+
+			case CONTROL_REQUEST_CONNECT:
+				manager->connectNotification();
+				break;
+
+			default:
 				continue;
-			_sendQueue->enqueue(p);
-			direction_out=false;
-			p.reset();
-			idle=false;
+			}
 		} else {
 			if (!p) {
 				p = _recvQueue->dequeue();
@@ -99,6 +118,8 @@ void RelayReader::relay_read_setup() {
 					hostProxy->stall_ep(endpoint);
 				}
 			}
+			if (_please_stop)
+					break;
 			if (p) {
 				if (hostProxy->send_wait_complete(endpoint, CTRL_REQUEST_TIMEOUT_MS)) {
 					direction_out=true;
@@ -128,6 +149,11 @@ void RelayReader::relay_read() {
 		length = 0;
 
 		proxy->receive_data(endpoint,attributes,maxPacketSize,&buf,&length, READ_TIMEOUT_MS);
+		if (_please_stop)
+		{
+			free(buf);
+			break;
+		}
 		if(length)  {
 			_sendQueue->enqueue(std::make_shared<Packet>(endpoint, buf, length));
 #if 1

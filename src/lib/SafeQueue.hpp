@@ -7,6 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <iostream>
+#include <thread>
 
 #define QUEUE_MAX 10000
 #define QUEUE_FULL_WARNING_THRESHOLD 1000
@@ -21,10 +22,15 @@ public:
 		, qPriority()
 		, m()
 		, c()
+		, destruct(0)
 	{}
 
 	~SafeQueue(void)
-	{}
+	{
+	    destruct = true;
+	    c.notify_one();
+	    std::this_thread::yield();
+	}
 
 	void enqueue(T t) {
 		std::lock_guard<std::mutex> lock(m);
@@ -43,6 +49,10 @@ public:
 		std::unique_lock<std::mutex> lock(m);
 		while(q.empty() && qPriority.empty()) {
 			c.wait(lock);
+			if(destruct)
+			{
+			    return nullptr;
+			}
 		}
 		T val;
 		if (!qPriority.empty()) {
@@ -71,9 +81,12 @@ public:
 
 	bool empty(void) {return q.empty() && qPriority.empty();}
 
+	size_t  size(void) {return q.size() + qPriority.size();}
+
 private:
 	std::queue<T> q, qPriority;
 	mutable std::mutex m;
 	std::condition_variable c;
+	bool destruct;
 };
 #endif
