@@ -53,7 +53,6 @@ public:
 	void relay_write_setup();
 
 	void please_stop(void) {
-	        std::cerr << __func__ << " " << __LINE__ << "stop relaying" << std::endl; //msw
 		_please_stop = true;
 		if (_recvQueue)
 			_recvQueue->enqueue(PacketPtr());

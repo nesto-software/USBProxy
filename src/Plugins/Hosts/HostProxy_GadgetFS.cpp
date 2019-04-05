@@ -6,11 +6,13 @@
 
 #include <cstring>
 #include <iostream>
+#include <iomanip>
 
 #include <unistd.h>
 #include <poll.h>
 #include <math.h>
 #include <thread>
+
 
 #include "GadgetFS_helpers.h"
 #include "errno.h"
@@ -21,6 +23,8 @@
 #include "Configuration.h"
 #include "Interface.h"
 #include "Endpoint.h"
+
+#define hex2(VALUE) std::setfill('0') << std::setw(2) << std::hex << (unsigned)VALUE << std::dec
 
 HostProxy_GadgetFS::HostProxy_GadgetFS(ConfigParser *cfg)
 	: HostProxy(*cfg)
@@ -202,53 +206,52 @@ int HostProxy_GadgetFS::reconnect() {
 void HostProxy_GadgetFS::disconnectEp()
 {
 	const unsigned timeout = 500;
+	const unsigned timeoutSecond = 1000;
 	uint8_t i;
 	int e;
 	for (i=0;i<16;i++) {
 		if (p_epin_async[i]) {
-			std::cout << "closing epin"<< (int)(i+0x80)<<std::endl;
+			std::cerr << "closing epin"<< hex2(i+0x80)<<std::endl;
 			aiocb* aio=p_epin_async[i];
 			p_epin_async[i]=NULL;
 			//if (p_epin_active[i]) {aio_cancel(aio->aio_fildes,aio);}
 			int rc = aio_cancel(aio->aio_fildes,aio);
-			std::cout << "aio_cancel  rc = " << rc << "(";
 			switch(rc)
 			{
 			case AIO_CANCELED:
-				std::cout << "AIO_CANCELED)"<< std::endl;
+			case AIO_ALLDONE:
 				break;
 
 			case AIO_NOTCANCELED:
-				std::cout << "AIO_NOTCANCELED), aio_error = ";
+				std::cerr << "aio_cancel  rc = " << rc << "(AIO_NOTCANCELED), aio_error = ";
 				e = aio_error(aio);
-				std::cout <<e<< strerror(e) << std::endl;
+				std::cerr << e << " " << strerror(e) << std::endl;
 				struct timespec ts;
 				ts.tv_sec = timeout/1000;
 				ts.tv_nsec = 1000000L * (timeout%1000);
 				rc = aio_suspend(&aio, 1, &ts);
 				if (rc)
 				{
-					std::cout << "aio_suspend error = " << rc << " errno = " << errno << " " << strerror(errno) << std::endl;
-					ts.tv_sec = timeout*10/1000;
-					ts.tv_nsec = 10*1000000L * (timeout%1000);
+					std::cerr << "aio_suspend error = " << rc << " errno = " << errno << " " << strerror(errno) << std::endl;
+					ts.tv_sec = timeoutSecond/1000;
+					ts.tv_nsec = 1000000L * (timeoutSecond%1000);
 					rc = aio_suspend(&aio, 1, &ts);
 					if (rc)
 					{
-						std::cout << "aio_suspend error = " << rc << " errno = " << errno << " " << strerror(errno) << std::endl;
+						std::cerr << "aio_suspend error(extended try) = " << rc << " errno = " << errno << " " << strerror(errno) << std::endl;
 					} else {
-						std::cout << "aio_suspend done on extended try" << std::endl;
+						std::cerr << "aio_suspend done on extended try" << std::endl;
 					}
 				}
 				else {
-					std::cout << "aio_suspend done" << std::endl;
+					std::cerr << "aio_suspend done" << std::endl;
 				}
 				break;
-			case AIO_ALLDONE:
-				std::cout << "AIO_ALLDONE)" << std::endl;
+
 				break;
 
 			default:
-				std::cout << "Error), errno = " << errno << std::endl;
+				std::cerr << "aio_cancel  rc = " << rc << "(error), errno = " << errno << " " << strerror(errno) << std::endl;
 				break;
 			}
 
@@ -258,49 +261,45 @@ void HostProxy_GadgetFS::disconnectEp()
 
 		}
 		if (p_epout_async[i]) {
-			std::cout << "closing epout"<<(int)i<<std::endl;
+			std::cerr << "closing epout"<<hex2(i)<<std::endl;
 			aiocb* aio=p_epout_async[i];
 			p_epout_async[i]=NULL;
 			int rc = aio_cancel(aio->aio_fildes,aio);
-			std::cout << "aio_cancel  rc = " << rc << "(";
 			switch(rc)
 			{
 			case AIO_CANCELED:
-				std::cout << "AIO_CANCELED)"<< std::endl;
+			case AIO_ALLDONE:
+
 				break;
 
 			case AIO_NOTCANCELED:
-				std::cout << "AIO_NOTCANCELED) aio_error = ";
+				std::cerr << "aio_cancel  rc = " << rc << "(AIO_NOTCANCELED), aio_error = ";
 				e = aio_error(aio);
-				std::cout <<e<< strerror(e) << std::endl;
+				std::cerr << e << " " << strerror(e) << std::endl;
 				struct timespec ts;
 				ts.tv_sec = timeout/1000;
 				ts.tv_nsec = 1000000L * (timeout%1000);
 				rc = aio_suspend(&aio, 1, &ts);
 				if (rc) {
-					std::cout << "aio_suspend error = " << rc << " errno = " << errno << " " << strerror(errno) << std::endl;
-					ts.tv_sec = timeout*10/1000;
-					ts.tv_nsec = 10*1000000L * (timeout%1000);
+					std::cerr << "aio_suspend error = " << rc << " errno = " << errno << " " << strerror(errno) << std::endl;
+					ts.tv_sec = timeoutSecond*10/1000;
+					ts.tv_nsec = 1000000L * (timeoutSecond%1000);
 					rc = aio_suspend(&aio, 1, &ts);
 					if (rc)
 					{
-						std::cout << "aio_suspend error = " << rc << " errno = " << errno << " " << strerror(errno) << std::endl;
+						std::cerr << "aio_suspend error (extended try) = " << rc << " errno = " << errno << " " << strerror(errno) << std::endl;
 					}
 					else {
-						std::cout << "aio_suspend done on extended try" << std::endl;
+						std::cerr << "aio_suspend done on extended try" << std::endl;
 					}
 				}
 				else {
-					std::cout << "aio_suspend done" << std::endl;
+					std::cerr << "aio_suspend done" << std::endl;
 				}
 				break;
 
-			case AIO_ALLDONE:
-				std::cout << "AIO_ALLDONE)" << std::endl;
-				break;
-
 			default:
-				std::cout << "Error), errno = " << errno << std::endl;
+				std::cerr << "aio_cancel  rc = " << rc << "(error), errno = " << errno << " " << strerror(errno) << std::endl;
 				break;
 			}
 
@@ -311,7 +310,6 @@ void HostProxy_GadgetFS::disconnectEp()
 		}
 	}
 }
-
 
 void HostProxy_GadgetFS::disconnect() {
 	if (!p_is_connected) {fprintf(stderr,"GadgetFS not connected.\n"); return;}
@@ -372,7 +370,7 @@ int HostProxy_GadgetFS::control_request(usb_ctrlrequest *setup_packet, int *nbyt
 		switch (events[i].type) {
 		case GADGETFS_SETUP:
 			if (i != nevent-1)
-				std::cout << "========== Warning may have lost event, i = " << i << ", nevent = " << nevent <<std::endl;
+				std::cerr << "========== Warning may have lost event, i = " << i << ", nevent = " << nevent <<std::endl;
 			lastControl=events[i].u.setup;
 			setup_packet->bRequestType=lastControl.bRequestType;
 			setup_packet->bRequest=lastControl.bRequest;
