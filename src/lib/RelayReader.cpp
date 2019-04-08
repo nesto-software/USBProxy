@@ -22,17 +22,19 @@
 #define CTRL_REQUEST_TIMEOUT_MS 500
 #define READ_TIMEOUT_MS 1500
 
-RelayReader::RelayReader(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& sendQueue, Manager* _manager)
+RelayReader::RelayReader(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& sendQueue, Manager* _manager, unsigned nice_)
 	: _please_stop(false)
 	, _sendQueue(&sendQueue)
 	, _recvQueue(0)
 	, manager(_manager)
+
 {
 	proxy=_proxy;
 	hostProxy=NULL;
 	endpoint=_endpoint->get_descriptor()->bEndpointAddress;
 	attributes=_endpoint->get_descriptor()->bmAttributes;
 	maxPacketSize=_endpoint->get_descriptor()->wMaxPacketSize;
+	setNice(nice_);
 }
 
 RelayReader::RelayReader(Endpoint* _endpoint,HostProxy* _hostProxy, PacketQueue& sendQueue, PacketQueue& recvQueue, Manager* _manager)
@@ -40,15 +42,23 @@ RelayReader::RelayReader(Endpoint* _endpoint,HostProxy* _hostProxy, PacketQueue&
 	, _sendQueue(&sendQueue)
 	, _recvQueue(&recvQueue)
 	, manager(_manager)
+	, nice(1)
+
 {
 	proxy=NULL;
 	hostProxy=_hostProxy;
 	endpoint=_endpoint->get_descriptor()->bEndpointAddress;
 	attributes=_endpoint->get_descriptor()->bmAttributes;
 	maxPacketSize=_endpoint->get_descriptor()->wMaxPacketSize;
+
 }
 
 RelayReader::~RelayReader() {
+}
+
+void RelayReader::setNice(unsigned nice)
+{
+	nice = (0 == nice)? 1:nice;
 }
 
 void RelayReader::relay_read_setup() {
@@ -142,7 +152,7 @@ void RelayReader::relay_read() {
 
 	__u8* buf;
 	int length;
-	unsigned nullCount = 0;
+	unsigned zlpCount = 0;
 	fprintf(stderr,"Starting reader thread (%ld) for EP%02x.\n",gettid(),endpoint);
 	while (!_please_stop) {
 		buf = nullptr;
@@ -156,21 +166,38 @@ void RelayReader::relay_read() {
 		}
 		if(length)  {
 			_sendQueue->enqueue(std::make_shared<Packet>(endpoint, buf, length));
-#if 1
-			nullCount = 0;
-		} else if (nullptr != buf) {
-			if ((nullCount /*% 0x1000*/) == 0) {
-				std::cout << "nullCount = " << nullCount << std::endl;
+			zlpCount = 0;
+		}
+		// Zero Lenth Packets (ZLP) can be a problem.  If all ZLPs are
+		// passed the performance will suffer and buffers may (will?)
+		//  overflow.  ZLP canot be completly blocked as they are
+		// required by in some cases by the usb protocols (i.e. used for
+		// bulk transfers that are less than the requested size and a
+		// multiple of the maximum packet size).  I have also found that
+		// some drivers expect ZLP for no data and will have problems
+		// if they just get NAKs (gadgetfs default way to present no
+		// data).  To resolve this problem the code always sends the
+		// first ZLP, then periodically sends them afterwards.
+		//
+		// Note: The setting of RelayReader::nice is heavily dependent
+		//       upon the DeviceProxy::nice, so care must be taken to
+		//       update RelayReader::nice whenever DeviceProxy::nice
+		//       is changed.
+		//
+		// todo: review: this is only really needed  when reading from
+		// the deviceProxy.  Should we change disable for hostProxy?
+		else if (nullptr != buf) {
+			if ((zlpCount % 4) == 0) {
+				std::cout << "nullCount = " << zlpCount << std::endl;
 				_sendQueue->enqueue(std::make_shared<Packet>(endpoint, buf, length));
-				++nullCount;
+				++zlpCount;
 			} else {
-				++nullCount;
+				++zlpCount;
 				free(buf);
 			}
 
 		} else {
 			free(buf);
-#endif
 		}
 	}
 	fprintf(stderr,"Finished reader thread (%ld) for EP%02x.\n",gettid(),endpoint);

@@ -33,6 +33,7 @@ private:
 	} epInterfaces[0x10];
 
 	bool endpoint_interface_claimed(uint8_t endpoint);
+	unsigned nice;
 
 public:
 	DeviceProxy_LibUSB(int vendorId = LIBUSB_HOTPLUG_MATCH_ANY, int productId = LIBUSB_HOTPLUG_MATCH_ANY,
@@ -63,6 +64,8 @@ public:
 
 	uint8_t get_address();
 	char* toString();
+	void setNice(unsigned nice);
+	int rxAttempt = 0;
 };
 
 #endif /* USBPROXY_DEVICEPROXY_LIBUSB_H */

@@ -75,6 +75,7 @@ private:
 
 	ConfigParser *cfg_;
 	uint8_t configurationNumber;
+	unsigned relayReaderNice;
 
 public:
 	Manager(ConfigParser *);
@@ -105,6 +106,8 @@ public:
 	void cleanup();
 	void disconnectNotification();
 	void connectNotification();
+	void setRelayReaderNice(unsigned);
+	void setDeviceProxyNice(unsigned nice);
 };
 
 #endif /* USBPROXY_MANAGER_H */

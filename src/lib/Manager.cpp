@@ -59,6 +59,14 @@ Manager::Manager(ConfigParser *cfg_p)
 		out_readers[i]=NULL;
 		out_writers[i]=NULL;
 	}
+
+	string pid_str = cfg_->get("RelayReader::nice");
+	if (pid_str == "")
+		relayReaderNice = 0;
+	else
+		relayReaderNice = stoi(pid_str, nullptr, 16);
+	cerr << "RelayReader::nice =" << relayReaderNice << endl;
+
 }
 
 Manager::~Manager() {
@@ -118,6 +126,27 @@ Manager::~Manager() {
 	if (injectors) {
 		free(injectors);
 		injectors=NULL;
+	}
+}
+
+void Manager::setRelayReaderNice(unsigned nice)
+{
+	relayReaderNice = nice;
+	// nice only needs to apply to in readers
+	for(unsigned i=0;i<16;i++) {
+		if (in_readers[i] != nullptr) {
+			in_readers[i]->setNice(nice);
+		}
+	}
+}
+
+void Manager::setDeviceProxyNice(unsigned nice)
+{
+	char str[16];
+	snprintf(str,sizeof(str),"%d",nice);
+	cfg_->set("DeviceProxy::nice", str);
+	if (nullptr !=  deviceProxy) {
+		deviceProxy->setNice(nice);
 	}
 }
 
@@ -377,13 +406,13 @@ void Manager::start_data_relaying() {
 	for (i=1;i<16;i++) {
 		if (in_endpoints[i]) {
 			if (!in_readers[i])
-				in_readers[i]=new RelayReader(in_endpoints[i],(Proxy*)deviceProxy, *in_queues[i], this);
+				in_readers[i]=new RelayReader(in_endpoints[i],(Proxy*)deviceProxy, *in_queues[i], this, relayReaderNice);
 			if(!in_writers[i])
 				in_writers[i]=new RelayWriter(in_endpoints[i],(Proxy*)hostProxy, *in_queues[i]);
 		}
 		if (out_endpoints[i]) {
 			if(!out_readers[i])
-				out_readers[i]=new RelayReader(out_endpoints[i],(Proxy*)hostProxy, *out_queues[i], this);
+				out_readers[i]=new RelayReader(out_endpoints[i],(Proxy*)hostProxy, *out_queues[i], this, relayReaderNice);
 			if(!out_writers[i])
 				out_writers[i]=new RelayWriter(out_endpoints[i],(Proxy*)deviceProxy, *out_queues[i]);
 		}

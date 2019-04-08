@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <thread>
 #include "DeviceProxy_LibUSB.h"
 #include "TRACE.h"
 #include "HexString.h"
@@ -46,8 +47,11 @@ void destroy_plugin() {
 }
 
 //CLEANUP hotplug support
+//todo not used anywhere yet
 
-DeviceProxy_LibUSB::DeviceProxy_LibUSB(int vendorId, int productId, bool includeHubs) {
+DeviceProxy_LibUSB::DeviceProxy_LibUSB(int vendorId, int productId, bool includeHubs):
+	 rxAttempt(0)
+{
 	context = NULL;
 	dev_handle = NULL;
 
@@ -68,22 +72,32 @@ DeviceProxy_LibUSB::DeviceProxy_LibUSB(int vendorId, int productId, bool include
 }
 
 DeviceProxy_LibUSB::DeviceProxy_LibUSB(ConfigParser *cfg) :
-		DeviceProxy(*cfg) {
+		DeviceProxy(*cfg)
+		, rxAttempt(0)
+	{
 	int vendorId, productId;
+	string str;
 
-	string vid_str = cfg->get("vendorId");
-	if (vid_str == "")
+	str = cfg->get("vendorId");
+	if (str == "")
 		vendorId = LIBUSB_HOTPLUG_MATCH_ANY;
 	else
-		vendorId = stoi(vid_str, nullptr, 16);
-	cerr << "vendorId=" << hex4(vendorId) << endl;
+		vendorId = stoi(str, nullptr, 16);
+	cerr << "vendorId = " << hex4(vendorId) << endl;
 
-	string pid_str = cfg->get("productId");
-	if (pid_str == "")
+	str = cfg->get("productId");
+	if (str == "")
 		productId = LIBUSB_HOTPLUG_MATCH_ANY;
 	else
-		productId = stoi(pid_str, nullptr, 16);
-	cerr << "productId=" << hex4(productId) << endl;
+		productId = stoi(str, nullptr, 16);
+	cerr << "productId = " << hex4(productId) << endl;
+
+	str = cfg->get("DeviceProxy::nice");
+	if (str == "")
+		nice = 0;
+	else
+		nice = stoi(str, nullptr, 16);
+	cerr << "DeviceProxy::nice =" << nice << endl;
 
 	bool includeHubs = false;
 
@@ -106,6 +120,8 @@ DeviceProxy_LibUSB::DeviceProxy_LibUSB(ConfigParser *cfg) :
 	}
 }
 
+
+
 DeviceProxy_LibUSB::~DeviceProxy_LibUSB() {
 	// for handling events of hotploug.
 	if (context && callback_handle != -1) {
@@ -118,6 +134,11 @@ DeviceProxy_LibUSB::~DeviceProxy_LibUSB() {
 	if (privateContext && context) {
 		libusb_exit(context);
 	}
+}
+
+void DeviceProxy_LibUSB::setNice(unsigned nice_)
+{
+	nice = nice_;
 }
 
 int DeviceProxy_LibUSB::connect(int timeout) {
@@ -446,6 +467,9 @@ void DeviceProxy_LibUSB::receive_data(uint8_t endpoint, uint8_t attributes, uint
 	}
 
 	int rc = LIBUSB_SUCCESS;
+	*dataptr = nullptr;
+	*length = 0;
+
 
 	//if (timeout < 10)
 		//timeout = 10;	//TODO: explain this!
@@ -456,27 +480,47 @@ void DeviceProxy_LibUSB::receive_data(uint8_t endpoint, uint8_t attributes, uint
 	 */
 	timeout = 0;
 
-	int attempt = 0;
+
+	// On a system where there is lots of output and very
+	// little input (i.e. a printer), continuously doing reads
+	// can severely impact performance.  As a simple solution to
+	// resolve this we throttle the reads for "DeviceProxy::nice" ms
+	// between reads.  Use of this parameter depends heavily upon
+	// application.
+	//
+	// Note: The setting of RelayReader::nice is heavily dependent
+	//       upon the DeviceProxy::nice, so care must be taken to
+	//       update RelayReader::nice whenever DeviceProxy::nice
+	//       is changed.
+
+	if ((0 == rxAttempt) && (0 != nice)){
+		std::this_thread::sleep_for(std::chrono::milliseconds(nice));
+		rxAttempt = 1;
+		return;
+	}
+
 	switch (attributes & USB_ENDPOINT_XFERTYPE_MASK) {
 	case USB_ENDPOINT_XFER_CONTROL:
 		cerr << "Can't send on a control endpoint." << endl;
 		break;
+
 	case USB_ENDPOINT_XFER_ISOC:
 		//TODO handle isochronous
 		cerr << "Isochronous endpoints unhandled." << endl;
 		break;
+
 	case USB_ENDPOINT_XFER_BULK:
 		*dataptr = (uint8_t *) malloc(maxPacketSize * 8);
-		do {
-			rc = libusb_bulk_transfer(dev_handle, endpoint, *dataptr, maxPacketSize, length, timeout);
-			if (rc == LIBUSB_SUCCESS && debugLevel > 2)
-				cerr << "received bulk msg (" << *length << " bytes)" << endl;
-			if ((rc == LIBUSB_ERROR_PIPE || rc == LIBUSB_ERROR_TIMEOUT))
-				libusb_clear_halt(dev_handle, endpoint);
-
-			attempt++;
-		} while ((rc == LIBUSB_ERROR_PIPE || rc == LIBUSB_ERROR_TIMEOUT) && attempt < MAX_ATTEMPTS);
+		rc = libusb_bulk_transfer(dev_handle, endpoint, *dataptr, maxPacketSize, length, timeout);
+		if (rc == LIBUSB_SUCCESS && debugLevel > 2) {
+			cerr << "received bulk msg (" << *length << " bytes)" << endl;
+		}
+		if ((rc == LIBUSB_ERROR_PIPE || rc == LIBUSB_ERROR_TIMEOUT)) {
+			libusb_clear_halt(dev_handle, endpoint);
+		}
+		rxAttempt++;
 		break;
+
 	case USB_ENDPOINT_XFER_INT:
 		*dataptr = (uint8_t *) malloc(maxPacketSize);
 		rc = libusb_interrupt_transfer(dev_handle, endpoint, *dataptr, maxPacketSize, length, timeout);
@@ -489,10 +533,16 @@ void DeviceProxy_LibUSB::receive_data(uint8_t endpoint, uint8_t attributes, uint
 		*dataptr = nullptr;
 		*length = 0;
 	}
-	if (rc != LIBUSB_SUCCESS)
+	else {
+		rxAttempt = 0;
+	}
+
+	if ((rc != LIBUSB_SUCCESS) && (rxAttempt > MAX_ATTEMPTS)) {
 		cerr << "Transfer error receiving on EP" << hex2(endpoint) << " (xfertype "
 				<< unsigned(attributes & USB_ENDPOINT_XFERTYPE_MASK) << ")" << ": "
 				<< libusb_strerror((libusb_error) rc) << endl;
+		rxAttempt = 0;
+	}
 }
 
 void DeviceProxy_LibUSB::set_endpoint_interface(uint8_t endpoint, uint8_t interface) {

@@ -13,7 +13,7 @@ class Configuration;
 class DeviceProxy : public Proxy {
 public:
 	static const __u8 plugin_type=PLUGIN_DEVICEPROXY;
-	
+
 	DeviceProxy(const ConfigParser& cfg)
 		: Proxy(cfg.debugLevel)
 	{}
@@ -43,6 +43,8 @@ public:
 	virtual void release_interface(__u8 interface)=0;
 
 	virtual __u8 get_address()=0;
+	virtual void setNice(unsigned nice) {}
+
 };
 
 extern "C" {

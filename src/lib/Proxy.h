@@ -31,6 +31,7 @@ public:
 	virtual void setConfig(Configuration* fs_cfg,Configuration* hs_cfg,bool hs)=0;
 	virtual char* toString() {return NULL;}
 	unsigned debugLevel;
+	virtual void setNice(unsigned nice) {}
 
 private:
         /// \brief Disallow copying.
