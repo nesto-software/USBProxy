@@ -216,11 +216,8 @@ const char * find_gadget_filename()
 	if (!dir)
 		return NULL;
 
-	entry = malloc(offsetof(struct dirent, d_name)
-				   + fpathconf(dirfd(dir), _PC_NAME_MAX)
-				   + 1);
 
-	fprintf(stderr,"searching in [%s]\n",gadgetfs_path);
+	//fprintf(stderr,"searching in [%s]\n",gadgetfs_path);
 
 	if (!entry) {
 		closedir (dir);
@@ -262,6 +259,5 @@ int open_endpoint(__u8 epAddress, const char * gadget_filename) {
 
 	char path[256];
 	snprintf(path, sizeof(path), "%s/ep%d%s", gadgetfs_path, number,direction);
-        fprintf(stderr, "opening %s\n", path);
 	return open(path, O_CLOEXEC | O_RDWR);
 }
