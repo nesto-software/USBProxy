@@ -137,7 +137,6 @@ int HostProxy_GadgetFS::generate_descriptor(Device* device) {
 	return 0;
 }
 
-
 int HostProxy_GadgetFS::connect(Device* device,int timeout) {
 	int status;
 
@@ -473,7 +472,9 @@ void HostProxy_GadgetFS::send_data(__u8 endpoint,__u8 attributes,__u16 maxPacket
 	memcpy((void*)(aio->aio_buf),dataptr,length);
 	aio->aio_nbytes=length;
 
+        std::cerr << "aio_write " << length << " bytes - start" << std::endl;
 	int rc=aio_write(aio);
+	std::cerr << "aio_write " << length << " bytes - qued with rc = " << rc << std::endl;
 	if (rc) {
 		// the error tends to happen during a reset/disconnect
 		// before the reset/disconnect is handles by control_request
@@ -487,7 +488,12 @@ void HostProxy_GadgetFS::send_data(__u8 endpoint,__u8 attributes,__u16 maxPacket
 		p_epin_active[number]=true;
 	}
 }
-
+//------------------------------------------------------------------------------
+/// \brief wait for aio_write to complete
+/// \return
+///     - true = write has completed
+///     - false = write has not completed
+//------------------------------------------------------------------------------
 bool HostProxy_GadgetFS::send_wait_complete(__u8 endpoint,int timeout) {
 	if (!endpoint) return true;
 	if (!(endpoint & 0x80)) {
@@ -510,13 +516,13 @@ bool HostProxy_GadgetFS::send_wait_complete(__u8 endpoint,int timeout) {
 		ts.tv_sec = timeout/1000;
 		ts.tv_nsec = 1000000L * (timeout%1000);
 		if (aio_suspend(&aio,1,&ts)) {
-			//msw this does not look right....
-			rc=0;
+		    return false;
 		} else {
 			rc=aio_error(aio);
 		}
 	}
 	if (rc==EINPROGRESS) return false;
+	std::cerr << "A" << std::endl;
 	free((void*)(aio->aio_buf));
 	aio->aio_buf=NULL;
 	aio->aio_nbytes=0;
@@ -531,7 +537,8 @@ bool HostProxy_GadgetFS::send_wait_complete(__u8 endpoint,int timeout) {
 		return true;
 	} else {
 		rc=aio_return(aio);
-		if (!rc) return true;
+		// msw I don't know why this was here
+		//if (!rc) return true;
 		if (rc == -1) {
 			std::cerr << "Bad aio_return (rc " << errno << ", '" << std::strerror(errno) << "')\n";
 			return false;
