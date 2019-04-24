@@ -22,6 +22,7 @@ endif()
 # Comment the following out for releases.
 set(CMAKE_C_FLAGS "$ENV{CFLAGS} -pthread -Wall")
 set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} $ENV{CPPFLAGS} -std=gnu++11 -pthread -pedantic -Wall -felide-constructors -fno-exceptions")
+set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} -g -Wshadow -Wpointer-arith  -Wcast-align -Wsign-compare  -Wunused")
 
 add_subdirectory(lib)
 add_subdirectory(Plugins)
