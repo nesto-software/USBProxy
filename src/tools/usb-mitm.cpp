@@ -237,7 +237,7 @@ extern "C" int main(int argc, char **argv)
 		manager->start_control_relaying();
 
 		while (!done && ((status = manager->get_status()) == USBM_RELAYING)) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(999));
+			std::this_thread::sleep_for(std::chrono::milliseconds(9));
 		}
 
 		frontend->close();

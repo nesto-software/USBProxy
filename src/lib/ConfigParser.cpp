@@ -139,7 +139,7 @@ void ConfigParser::print_config() {
 		it != strings.end(); ++it) {
 		std::clog << "\t\t" << it->first << ": " << it->second << std::endl;
 	}
-	
+
 	std::clog << "\tVectors: " << vectors.size() << std::endl;
 	for(std::map<std::string, std::vector<std::string>>::iterator it = vectors.begin();
 		it != vectors.end(); ++it) {
@@ -149,8 +149,8 @@ void ConfigParser::print_config() {
 			std::clog << "\t\t\t" << *itv << std::endl;
 		}
 	}
-	
-	std::clog << "Pointer: " << pointers.size() << std::endl;
+
+	std::clog << "\tPointer: " << pointers.size() << std::endl;
 	for(std::map<std::string, void*>::iterator it = pointers.begin();
 		it != pointers.end(); ++it) {
 		std::clog << "\t\t" << it->first << ": " << it->second << std::endl;

@@ -34,6 +34,15 @@
 
 using namespace std;
 
+//------------------------------------------------------------------------------
+/// \brief  dummy signal handler
+///
+/// use a signal as an alternative way to end all the aio_suspends
+//------------------------------------------------------------------------------
+static void dummy_signal_handler(int x)
+{
+}
+
 Manager::Manager(ConfigParser *cfg_p)
 	: _debug_level(cfg_p->debugLevel)
 	,  cfg_(cfg_p)
@@ -61,19 +70,17 @@ Manager::Manager(ConfigParser *cfg_p)
 	}
 
 	string pid_str = cfg_->get("RelayReader::nice");
-	if (pid_str == "")
+	if (pid_str == "") {
 		relayReaderNice = 0;
-	else
-		relayReaderNice = stoi(pid_str, nullptr, 16);
-	cerr << "RelayReader::nice =" << relayReaderNice << endl;
-
+	}
+	else {
+		relayReaderNice = stoi(pid_str, nullptr, 10);
+	}
+        //todo sigaction / no SA_RESTART ???
+	signal(SIGUSR1, dummy_signal_handler);
 }
 
 Manager::~Manager() {
-	if (device) {
-		delete(device);
-		device=NULL;
-	}
 	if (filters) {
 		free(filters);
 		filters=NULL;
@@ -120,12 +127,19 @@ Manager::~Manager() {
 	for (i = 0; i < injectorCount; ++i)
 		if (injectors[i])
 			injectors[i]->please_stop();
+
 	for (auto& i_thread: injectorThreads)
 		i_thread.join();
 	injectorThreads.clear();
+
 	if (injectors) {
 		free(injectors);
 		injectors=NULL;
+	}
+
+	if (device) {
+		delete(device);
+		device=NULL;
 	}
 }
 
@@ -263,7 +277,6 @@ inline std::string shex(unsigned num)
 }
 
 void Manager::start_control_relaying(){
-
 	//TODO this should exit immediately if already started, and wait (somehow) is stopping or setting up
 	status=USBM_SETUP;
 
@@ -418,7 +431,6 @@ void Manager::start_data_relaying() {
 		}
 	}
 
-
 	//apply filters to relayers
 	for(i=0;i<filterCount;i++) {
 		if (filters[i]->device.test(device) && filters[i]->configuration.test(cfg)) {
@@ -488,13 +500,16 @@ void Manager::stopEps(unsigned start)
 		if (out_readerThreads[i].joinable()) {out_readers[i]->please_stop();}
 		if (out_writerThreads[i].joinable()) {out_writers[i]->please_stop();}
 	}
-	hostProxy->disconnectEp();
+
+	kill(getpid(), SIGUSR1);    // use signal to interrupt all reads/writes/aio_suspends
+				    // Note: also may used aio_cancel later.
+	hostProxy->disconnectEps();
 	std::this_thread::yield();
 
-	fprintf(stderr, "STAGE 1\n");
 
 	//wait for all relayer threads to stop, then delete relayer objects
 	for(i=start;i<16;i++) {
+
 		if (in_endpoints[i]) {in_endpoints[i]=NULL;}
 		fprintf(stderr, "in_readers length: %d\n", in_readers[i]);
 
@@ -511,7 +526,6 @@ void Manager::stopEps(unsigned start)
 			in_queues[i] = nullptr;
 		}
 
-
 		if (in_writers[i]) {
 			if (in_writerThreads[i].joinable()) {
 				in_writerThreads[i].join();
@@ -519,6 +533,7 @@ void Manager::stopEps(unsigned start)
 			delete(in_writers[i]);
 			in_writers[i]=NULL;
 		}
+
 		if (out_endpoints[i]) {out_endpoints[i]=NULL;}
 		if (out_readers[i]) {
 			if (out_readerThreads[i].joinable()) {
@@ -548,20 +563,36 @@ void Manager::stopEps(unsigned start)
 			deviceProxy->release_interface(ifc_idx);
 		}
 	}
+
 	configurationNumber = 0;
+	std::cerr << "disconnected" << std::endl;
 }
 
 void Manager::stop_relaying(){
-	if (status==USBM_SETUP) {status=USBM_SETUP_ABORT;return;}
-	if (status!=USBM_RELAYING && status!=USBM_SETUP_ABORT) return;
-	status=USBM_STOPPING;
+	// msw don't realy like this... need to veridy it does what it supposed to
+	switch(status) {
+	case USBM_SETUP:
+		status=USBM_SETUP_ABORT;
+		std::cerr << "USBM_SETUP" <<std::endl;
+		return;
+
+	case USBM_RELAYING:
+	case USBM_SETUP_ABORT:
+	case USBM_RESET:
+		status = USBM_STOPPING;
+		break;
+
+	case USBM_IDLE:
+	case USBM_STOPPING:
+	default:
+		std::cerr << "USBM_IDLE/USBM_STOPPING/default" <<std::endl;
+	}
 
 	int i;
 	//signal all injector threads to stop ASAP
 	for(i=0;i<injectorCount;i++) {
 		if (injectors[i]) injectors[i]->please_stop();
 	}
-
 	//wait for all injector threads to stop
 	for (auto& i_thread: injectorThreads)
 		i_thread.join();
@@ -569,15 +600,13 @@ void Manager::stop_relaying(){
 
 	stopEps(ALL_ENDPOINTS);
 
-	// todo mse review this line is it needed?
+	// todo msw review this line is it needed?
 	if (out_endpoints[0]) {delete(out_endpoints[0]);out_endpoints[0]=NULL;}
 
 	//disconnect from host
 	hostProxy->disconnect();
-
 	//disconnect device proxy
 	deviceProxy->disconnect();
-
 	//clean up device model & endpoints
 	if (device) {
 		// modified 20141001 atsumi@aizulab.com
@@ -587,8 +616,12 @@ void Manager::stop_relaying(){
 	}
 
 	status=USBM_IDLE;
+	std::cerr << "relaying stopped" <<std::endl;
 }
 
+//------------------------------------------------------------------------------
+/// \brief  called by relayReader to notify manager of new host connection
+//------------------------------------------------------------------------------
 void Manager::connectNotification()
 {
 	std::cout << "==============connect" << std::endl;
@@ -598,25 +631,33 @@ void Manager::connectNotification()
 	// coniguration to the first configuration.
 	// setConfig(1);
 }
+//------------------------------------------------------------------------------
+/// \brief  called by relayReader to notify manager of host disconnect
+//------------------------------------------------------------------------------
 void Manager::disconnectNotification()
 {
 	std::cout << "==============disconnect" << std::endl;
+#if 1 // temp msw testing
 	stopEps(ALL_ENDPOINTS_EXCEPT_EP0);
+#else
+        status = USBM_RESET;
+#endif
+
 }
 
 void Manager::setConfig(__u8 index) {
-        if((configurationNumber != 0) && (configurationNumber != index)) {
-        	stopEps(ALL_ENDPOINTS_EXCEPT_EP0);
-        }
+	if((configurationNumber != 0) && (configurationNumber != index)) {
+		stopEps(ALL_ENDPOINTS_EXCEPT_EP0);
+	}
 
-        if (configurationNumber == index) {
-        	return;
-        }
+	if (configurationNumber == index) {
+		return;
+	}
 
-        std::cout << "changing from config " << (int)configurationNumber << " to " << (int)index << std::endl;
-        configurationNumber = index;;
+	std::cout << "changing from config " << (int)configurationNumber << " to " << (int)index << std::endl;
+	configurationNumber = index;;
 
-        if (0 == index) {
+	if (0 == index) {
 		return;
 	}
 
@@ -635,6 +676,7 @@ void Manager::setConfig(__u8 index) {
 		hostProxy->setConfig(device->get_configuration(index),NULL,device->is_highspeed());
 	}
 	start_data_relaying();
+	std::cerr << "connected and relaying" << std::endl;
 }
 
 /* Delete all injectors and filters - easier to manage */

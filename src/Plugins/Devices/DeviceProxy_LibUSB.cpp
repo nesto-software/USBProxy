@@ -96,8 +96,8 @@ DeviceProxy_LibUSB::DeviceProxy_LibUSB(ConfigParser *cfg) :
 	if (str == "")
 		nice = 0;
 	else
-		nice = stoi(str, nullptr, 16);
-	cerr << "DeviceProxy::nice =" << nice << endl;
+		nice = stoi(str, nullptr, 10);
+	cerr << "DeviceProxy::nice = " << nice << endl;
 
 	bool includeHubs = false;
 
@@ -480,25 +480,6 @@ void DeviceProxy_LibUSB::receive_data(uint8_t endpoint, uint8_t attributes, uint
 	 */
 	timeout = 0;
 
-
-	// On a system where there is lots of output and very
-	// little input (i.e. a printer), continuously doing reads
-	// can severely impact performance.  As a simple solution to
-	// resolve this we throttle the reads for "DeviceProxy::nice" ms
-	// between reads.  Use of this parameter depends heavily upon
-	// application.
-	//
-	// Note: The setting of RelayReader::nice is heavily dependent
-	//       upon the DeviceProxy::nice, so care must be taken to
-	//       update RelayReader::nice whenever DeviceProxy::nice
-	//       is changed.
-
-	if ((0 == rxAttempt) && (0 != nice)){
-		std::this_thread::sleep_for(std::chrono::milliseconds(nice));
-		rxAttempt = 1;
-		return;
-	}
-
 	switch (attributes & USB_ENDPOINT_XFERTYPE_MASK) {
 	case USB_ENDPOINT_XFER_CONTROL:
 		cerr << "Can't send on a control endpoint." << endl;
@@ -510,6 +491,50 @@ void DeviceProxy_LibUSB::receive_data(uint8_t endpoint, uint8_t attributes, uint
 		break;
 
 	case USB_ENDPOINT_XFER_BULK:
+		// On a system where there is lots of output and very
+		// little input (i.e. a printer), continuously doing reads
+		// can severely impact performance.  As a simple solution to
+		// resolve this we throttle the polling for "DeviceProxy::nice"
+		// ms between reads.  Use of this parameter depends heavily
+		// upon application.
+
+		// Zero Lenth Packets (ZLP) can be a problem.  If all ZLPs are
+		// passed the performance will suffer and buffers may
+		// overflow.  ZLP cannot be completely blocked as they are
+		// required in some cases by the usb protocols (i.e. used for
+		// bulk transfers that are less than the requested size and a
+		// multiple of the maximum packet size).  I have also found that
+		// some drivers expect ZLP for no data and will have problems
+		// if they just get NAKs (gadgetfs default way to present no
+		// data).
+		//
+		// Two methods are used to reduce ZLPs.  DeviceProxy::nice
+		// keeps the first ZLP and every nth ZLP.  Ther rest are
+		// discarded.  The flow of ZLP can also be limited  with
+		// DeviceProxy::nice.  DeviceProxy::nice reduces the device
+		// polling rate which  also reduces the ZLP rate.
+		//
+		// The use of RelayReader::nice vs DeviceProxy::nice is
+		// application dependent.  Generally applications where there
+		// is heavy data output  and little input will have a higher
+		// DeviceProxy::nice settings and thus lower (typically 1 or 2)
+		//  RelayReader::nice setting.  Applications with heavy data
+		// input will have a low (zero?) DeviceProxy::nice setting and
+		// thus may have larger RelayReader::nice settings.
+		//
+		// Note: The setting of RelayReader::nice is heavily dependent
+		//       upon the DeviceProxy::nice, so care must be taken to
+		//       update RelayReader::nice if DeviceProxy::nice
+		//       is changed.
+		//
+
+
+		if ((0 == rxAttempt) && (0 != nice)){
+			std::this_thread::sleep_for(std::chrono::milliseconds(nice));
+			rxAttempt = 1;
+			return;
+		}
+
 		*dataptr = (uint8_t *) malloc(maxPacketSize * 8);
 		rc = libusb_bulk_transfer(dev_handle, endpoint, *dataptr, maxPacketSize, length, timeout);
 		if (rc == LIBUSB_SUCCESS && debugLevel > 2) {

@@ -2,8 +2,6 @@
  * This file is part of USBProxy.
  */
 
-#include "HostProxy_GadgetFS.h"
-
 #include <cstring>
 #include <iostream>
 #include <iomanip>
@@ -12,8 +10,9 @@
 #include <poll.h>
 #include <math.h>
 #include <thread>
+#include <sys/ioctl.h>
 
-
+#include "HostProxy_GadgetFS.h"
 #include "GadgetFS_helpers.h"
 #include "errno.h"
 #include "TRACE.h"
@@ -28,6 +27,7 @@
 
 HostProxy_GadgetFS::HostProxy_GadgetFS(ConfigParser *cfg)
 	: HostProxy(*cfg)
+	, m()
 {
 	mount_gadget();
 	p_is_connected = false;
@@ -203,123 +203,121 @@ int HostProxy_GadgetFS::reconnect() {
 	return 0;
 }
 
-void HostProxy_GadgetFS::disconnectEp()
+//------------------------------------------------------------------------------
+/// \brief cancel aio request and close endpoint
+//------------------------------------------------------------------------------
+void HostProxy_GadgetFS::closeEP(uint8_t endpoint)
 {
-	const unsigned timeout = 500;
-	const unsigned timeoutSecond = 1000;
-	uint8_t i;
+        std::cerr << "closing EP" << hex2(endpoint) <<std::endl;
+	std::lock_guard<std::mutex> lock(m);
+	unsigned n = endpoint & 0xf;
+	aiocb* aio = (endpoint & 0x80) ? p_epin_async[n]:p_epout_async[n];
+	if (nullptr == aio) {
+		return;
+	}
+
+	if (endpoint & 0x80) {
+		p_epin_active[n]=false;
+	}
+	cancelAio(endpoint);
+	if (endpoint & 0x80) {
+		p_epin_async[n] = nullptr;
+	} else {
+		p_epout_async[n] = nullptr;
+	}
+
+	if (aio->aio_fildes) {
+#if 0  // GADGETFS_FIFO_STATUS/GADGETFS_FIFO_FLUSH not supported on raspberry pi
+		if (endpoint != 0) {
+			int status = ioctl (aio->aio_fildes, GADGETFS_FIFO_STATUS);
+			if (status < 0) {
+				/* ENODEV reported after disconnect */
+				if (errno != ENODEV && errno != -EOPNOTSUPP)
+					perror ("get fifo status");
+			} else {
+				fprintf (stderr, "fd %d, unclaimed = %d\n", aio->aio_fildes, status);
+				if (status) {
+					status = ioctl (aio->aio_fildes, GADGETFS_FIFO_FLUSH);
+					if (status < 0)
+						perror ("fifo flush");
+				}
+			}
+		}
+#endif
+
+		if (close(aio->aio_fildes))
+		{
+		    perror("close");
+		}
+		aio->aio_fildes = 0;
+	}
+	if (aio->aio_buf) {free((void*)(aio->aio_buf));aio->aio_buf=NULL;}
+	delete(aio);
+}
+
+//------------------------------------------------------------------------------
+/// \brief  cancel an aio request for an endpoint.
+//------------------------------------------------------------------------------
+bool HostProxy_GadgetFS::cancelAio(unsigned ep)
+{
 	int e;
+
+	aiocb* aio = (ep & 0x80) ? p_epin_async[ep & 0x7f]:p_epout_async[ep];
+	int rc = aio_cancel(aio->aio_fildes, aio);
+	std::this_thread::yield();
+	switch(rc)
+	{
+	case AIO_CANCELED:
+	case AIO_ALLDONE:
+		return true;
+
+	case AIO_NOTCANCELED:
+		std::cerr << "EP" << hex2(ep) << " aio_cancel  rc = " << rc << "(AIO_NOTCANCELED), aio_error = ";
+		e = aio_error(aio);
+		std::cerr << e << " " << strerror(e) << std::endl;
+		return false;
+
+	default:
+		std::cerr << "EP" << hex2(ep) << " aio_cancel  rc = " << rc << "(error), errno = " << errno << " " << strerror(errno) << std::endl;
+		return false;
+	}
+}
+
+//------------------------------------------------------------------------------
+/// \brief  cancels pending aio requests for all (data) endpoints
+///
+/// This should be used in conjunction with please_stop (please_stop should be
+/// called first for all threads).  This will create an ECANCELED notification
+/// for all pending aio requests allowing the threads to detect please_stop.
+//------------------------------------------------------------------------------
+void HostProxy_GadgetFS::disconnectEps()
+{
+	uint8_t i;
 	for (i=0;i<16;i++) {
 		if (p_epin_async[i]) {
-			std::cerr << "closing epin"<< hex2(i+0x80)<<std::endl;
-			aiocb* aio=p_epin_async[i];
-			p_epin_async[i]=NULL;
-			//if (p_epin_active[i]) {aio_cancel(aio->aio_fildes,aio);}
-			int rc = aio_cancel(aio->aio_fildes,aio);
-			switch(rc)
-			{
-			case AIO_CANCELED:
-			case AIO_ALLDONE:
-				break;
-
-			case AIO_NOTCANCELED:
-				std::cerr << "aio_cancel  rc = " << rc << "(AIO_NOTCANCELED), aio_error = ";
-				e = aio_error(aio);
-				std::cerr << e << " " << strerror(e) << std::endl;
-				struct timespec ts;
-				ts.tv_sec = timeout/1000;
-				ts.tv_nsec = 1000000L * (timeout%1000);
-				rc = aio_suspend(&aio, 1, &ts);
-				if (rc)
-				{
-					std::cerr << "aio_suspend error = " << rc << " errno = " << errno << " " << strerror(errno) << std::endl;
-					ts.tv_sec = timeoutSecond/1000;
-					ts.tv_nsec = 1000000L * (timeoutSecond%1000);
-					rc = aio_suspend(&aio, 1, &ts);
-					if (rc)
-					{
-						std::cerr << "aio_suspend error(extended try) = " << rc << " errno = " << errno << " " << strerror(errno) << std::endl;
-					} else {
-						std::cerr << "aio_suspend done on extended try" << std::endl;
-					}
-				}
-				else {
-					std::cerr << "aio_suspend done" << std::endl;
-				}
-				break;
-
-				break;
-
-			default:
-				std::cerr << "aio_cancel  rc = " << rc << "(error), errno = " << errno << " " << strerror(errno) << std::endl;
-				break;
-			}
-
-			if (aio->aio_fildes) {close(aio->aio_fildes);aio->aio_fildes=0;}
-			if (aio->aio_buf) {free((void*)(aio->aio_buf));aio->aio_buf=NULL;}
-			delete(aio);
-
+			std::cerr << "closing EPin"<< hex2(i+0x80)<<std::endl;
+			closeEP(i + 0x80);
 		}
+
 		if (p_epout_async[i]) {
-			std::cerr << "closing epout"<<hex2(i)<<std::endl;
-			aiocb* aio=p_epout_async[i];
-			p_epout_async[i]=NULL;
-			int rc = aio_cancel(aio->aio_fildes,aio);
-			switch(rc)
-			{
-			case AIO_CANCELED:
-			case AIO_ALLDONE:
-
-				break;
-
-			case AIO_NOTCANCELED:
-				std::cerr << "aio_cancel  rc = " << rc << "(AIO_NOTCANCELED), aio_error = ";
-				e = aio_error(aio);
-				std::cerr << e << " " << strerror(e) << std::endl;
-				struct timespec ts;
-				ts.tv_sec = timeout/1000;
-				ts.tv_nsec = 1000000L * (timeout%1000);
-				rc = aio_suspend(&aio, 1, &ts);
-				if (rc) {
-					std::cerr << "aio_suspend error = " << rc << " errno = " << errno << " " << strerror(errno) << std::endl;
-					ts.tv_sec = timeoutSecond*10/1000;
-					ts.tv_nsec = 1000000L * (timeoutSecond%1000);
-					rc = aio_suspend(&aio, 1, &ts);
-					if (rc)
-					{
-						std::cerr << "aio_suspend error (extended try) = " << rc << " errno = " << errno << " " << strerror(errno) << std::endl;
-					}
-					else {
-						std::cerr << "aio_suspend done on extended try" << std::endl;
-					}
-				}
-				else {
-					std::cerr << "aio_suspend done" << std::endl;
-				}
-				break;
-
-			default:
-				std::cerr << "aio_cancel  rc = " << rc << "(error), errno = " << errno << " " << strerror(errno) << std::endl;
-				break;
-			}
-
-			if (aio->aio_fildes) {close(aio->aio_fildes);aio->aio_fildes=0;}
-			if (aio->aio_buf) {free((void*)(aio->aio_buf));aio->aio_buf=NULL;}
-			delete(aio);
-
+			std::cerr << "closing EPout"<< hex2(i)<<std::endl;
+			closeEP(i);
 		}
 	}
 }
 
 void HostProxy_GadgetFS::disconnect() {
-	if (!p_is_connected) {fprintf(stderr,"GadgetFS not connected.\n"); return;}
-
+	if (!p_is_connected) {fprintf(stderr,"GadgetFS not connected.\n");return;}
 	if (p_device_file) {
-		close(p_device_file);
+		if (close(p_device_file))
+			std::cerr << "Error closing EP0, errno = " << errno << strerror(errno) << std::endl;
 		p_device_file=0;
 	}
-	disconnectEp();
-
+	else
+	{
+		std::cerr << "Error closing EP0 already disconnected" << std::endl;
+	}
+	disconnectEps();
 	unmount_gadget();
 
 	p_is_connected = false;
@@ -338,13 +336,13 @@ bool HostProxy_GadgetFS::is_connected() {
 
 //-----------------------------------------------------------------------------
 /// \return
-///         - 0 if there is no request,
+///         - 0 if there is no request (timeout),
 ///         - CONTROL_REQUEST_SETUP   for a control request
 ///         - CONTROL_REQUEST_DISCONNECT        if the device has disconnected
 ///         - CONTROL_REQUEST_CONNECT           if the device has connected
 //-----------------------------------------------------------------------------
 int HostProxy_GadgetFS::control_request(usb_ctrlrequest *setup_packet, int *nbytes, __u8** dataptr,int timeout) {
-	struct usb_gadgetfs_event events[NEVENT];//todo msw change to 1?
+	struct usb_gadgetfs_event events[/*NEVENT*/1];//todo msw change to 1?
 	int ret, nevent, i;
 	struct pollfd fds;
 
@@ -362,9 +360,11 @@ int HostProxy_GadgetFS::control_request(usb_ctrlrequest *setup_packet, int *nbyt
 		return 0;
 	}
 
+
 	nevent = ret / sizeof(events[0]);
 	if (debugLevel>1) fprintf(stderr, "gadgetfs: %d events received\n", nevent);
 
+        // todo msw remove for loop and cleanup associated nevent / lastControl stuff
 	for (i = 0; i < nevent; i++) {
 		if (debugLevel>0 && events[i].type!=GADGETFS_SETUP) fprintf(stderr,"gadgetfs: event %d\n", events[i].type);
 		switch (events[i].type) {
@@ -377,15 +377,16 @@ int HostProxy_GadgetFS::control_request(usb_ctrlrequest *setup_packet, int *nbyt
 			setup_packet->wIndex=lastControl.wIndex;
 			setup_packet->wValue=lastControl.wValue;
 			setup_packet->wLength=lastControl.wLength;
-			// not sure why this was here in the frst place... ack
-			// is handed in the relayReader thread.  It seems to be
-			// messing up bulk writes that happen quickly after a
-			// configuration.
-			//if (lastControl.bRequest == USB_REQ_SET_CONFIGURATION
-			//	&& !(lastControl.bRequestType&0x80))
-			//{
-			//	control_ack();
-			//}
+			// not sure why this was here in the first place... ack
+			// is handed in the relayReader thread.
+			//msw
+#if 0
+			if (lastControl.bRequest == USB_REQ_SET_CONFIGURATION
+				&& !(lastControl.bRequestType&0x80))
+			{
+				control_ack();
+			}
+#endif
 
 			if (!(lastControl.bRequestType&0x80) && lastControl.wLength) {
 				*dataptr=(__u8*)malloc(lastControl.wLength);
@@ -427,7 +428,7 @@ int HostProxy_GadgetFS::control_request(usb_ctrlrequest *setup_packet, int *nbyt
 			break;
 
 		case GADGETFS_SUSPEND:
-			std::cout << "==============suspend" << std::endl;
+			std::cerr << "==============suspend" << std::endl;
 			/*
 			if (handle->event_cb) {
 				event.type = USG_EVENT_SUSPEND;
@@ -463,6 +464,7 @@ void HostProxy_GadgetFS::send_data(__u8 endpoint,__u8 attributes,__u16 maxPacket
 	int number=endpoint&0x0f;
 	if (!p_epin_async[number]) {
 		fprintf(stderr,"trying to send %d bytes on a non-open EP%02x\n",length,endpoint);
+		std::this_thread::sleep_for(std::chrono::milliseconds(20));
 		return;
 	}
 
@@ -473,7 +475,12 @@ void HostProxy_GadgetFS::send_data(__u8 endpoint,__u8 attributes,__u16 maxPacket
 
 	int rc=aio_write(aio);
 	if (rc) {
+		// the error tends to happen during a reset/disconnect
+		// before the reset/disconnect is handles by control_request
 		fprintf(stderr,"Error submitting aio for EP%02x %d %s\n",endpoint,errno,strerror(errno));
+		if (ESHUTDOWN == errno) {
+			closeEP(endpoint);
+		}
 	} else {
 		if (debugLevel > 2)
 			std::cerr << "Submitted " << length << " bytes to gadgetfs EP" << std::hex << (unsigned)endpoint << std::dec << '\n';
@@ -503,6 +510,7 @@ bool HostProxy_GadgetFS::send_wait_complete(__u8 endpoint,int timeout) {
 		ts.tv_sec = timeout/1000;
 		ts.tv_nsec = 1000000L * (timeout%1000);
 		if (aio_suspend(&aio,1,&ts)) {
+			//msw this does not look right....
 			rc=0;
 		} else {
 			rc=aio_error(aio);
@@ -513,7 +521,12 @@ bool HostProxy_GadgetFS::send_wait_complete(__u8 endpoint,int timeout) {
 	aio->aio_buf=NULL;
 	aio->aio_nbytes=0;
 	if (rc) {
+		// the error tends to happen during a reset/disconnect
+		// before the reset/disconnect is handles by control_request
 		fprintf(stderr,"Error during async aio on EP %02x %d %s (%s)\n",endpoint,rc,strerror(rc), __func__);
+		if (ESHUTDOWN == rc) {
+			closeEP(endpoint);
+		}
 		p_epin_active[number]=false;
 		return true;
 	} else {
@@ -561,8 +574,13 @@ void HostProxy_GadgetFS::receive_data(__u8 endpoint,__u8 attributes,__u16 maxPac
 	}
 	if (rc) {
 		if (rc==EINPROGRESS) {return;}
+		// the error tends to happen during a reset/disconnect
+		// before the reset/disconnect is handles by control_request
 		fprintf(stderr,"Error during async aio on EP %02x %d %s (%s)\n",endpoint,rc,strerror(rc), __func__);
-		std::this_thread::sleep_for(std::chrono::milliseconds(20));
+		if (ESHUTDOWN == rc) {
+			closeEP(endpoint);
+		}
+
 	} else {
 		rc=aio_return(aio);
 		if (rc == -1) {
@@ -580,15 +598,16 @@ void HostProxy_GadgetFS::receive_data(__u8 endpoint,__u8 attributes,__u16 maxPac
 			p_epout_async[number]=NULL;
 		}
 	}
-
 }
 
+// note: its odd, but you create the status write with a read....
 void HostProxy_GadgetFS::control_ack() {
 	if (debugLevel) fprintf(stderr,"Sending ACK\n");
 	if (lastControl.bRequestType&0x80) {
 		write(p_device_file,0,0);
 	} else {
 		read(p_device_file,0,0);
+
 	}
 }
 
@@ -632,6 +651,7 @@ void HostProxy_GadgetFS::setConfig(Configuration* fs_cfg,Configuration* hs_cfg,b
 				__u8 epAddress=fs_ep->bEndpointAddress;
 
 				int fd=open_endpoint(epAddress, device_filename);
+				std::cerr << "EP 0x" << std::hex << (unsigned)epAddress << std::dec << " opened" <<std::endl;
 				if (fd<0) {
 					std::cerr << __LINE__ << " ";
 					fprintf(stderr,"Fail on open EP%02x %d %s\n",epAddress,errno,strerror(errno));

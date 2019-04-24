@@ -11,6 +11,7 @@ extern "C" {
 #include "HostProxy.h"
 #include <pthread.h>
 #include <unistd.h>
+#include <mutex>
 #include "TRACE.h"
 #include "errno.h"
 #include "aio.h"
@@ -32,6 +33,10 @@ private:
 	int generate_descriptor(Device* device);
 
 	usb_ctrlrequest lastControl;
+	mutable std::mutex m;
+
+	bool cancelAio(unsigned ep);
+	void closeEP(uint8_t endpoint);
 
 public:
 	HostProxy_GadgetFS(ConfigParser *cfg);
@@ -50,7 +55,7 @@ public:
 	void control_ack();
 	void stall_ep(__u8 endpoint);
 	void setConfig(Configuration* fs_cfg,Configuration* hs_cfg,bool hs);
-	void disconnectEp();
+	void disconnectEps();
 };
 
 #endif /* USBPROXY_HOSTPROXY_GADGETFS_H */

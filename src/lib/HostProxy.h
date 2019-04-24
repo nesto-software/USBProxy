@@ -41,7 +41,7 @@ public:
 
 	virtual void control_ack()=0;
 	virtual void stall_ep(__u8 endpoint)=0;
-	virtual void disconnectEp() {}
+	virtual void disconnectEps() {}
 	virtual void setNice(unsigned nice) {}
 };
 

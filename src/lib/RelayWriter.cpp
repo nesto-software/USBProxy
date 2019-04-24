@@ -89,9 +89,7 @@ void RelayWriter::relay_write_setup() {
 		return;
 	}
 
-
 	__u8 j;
-
 	PacketPtr p;
 	int length;
 	usb_ctrlrequest ctrl_req;
@@ -130,6 +128,7 @@ void RelayWriter::relay_write_setup() {
 			if (s->ctrl_req.bRequest == USB_REQ_SET_CONFIGURATION && s->ctrl_req.bRequestType == 0) {
 				manager->setConfig(s->ctrl_req.wValue);
 			}
+			// msw -> why is this needed?
 			s->ctrl_req.wLength=0;
 		}
 		if (s->filter) {
@@ -160,8 +159,9 @@ void RelayWriter::relay_write() {
 			{
 				break;
 			}
-			if (!p)
+			if (!p)  {
 				continue;
+			}
 
 			if (p->filter) {
 				for(size_t j=0; j<filters.size(); j++) {
@@ -169,6 +169,11 @@ void RelayWriter::relay_write() {
 						filters[j]->filter_packet(p.get());
 					}
 				}
+			}
+
+			if (_please_stop)
+			{
+				break;
 			}
 
 			if (p->transmit) {

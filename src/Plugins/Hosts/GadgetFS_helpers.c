@@ -262,6 +262,6 @@ int open_endpoint(__u8 epAddress, const char * gadget_filename) {
 
 	char path[256];
 	snprintf(path, sizeof(path), "%s/ep%d%s", gadgetfs_path, number,direction);
-
+        fprintf(stderr, "opening %s\n", path);
 	return open(path, O_CLOEXEC | O_RDWR);
 }

@@ -56,9 +56,11 @@ RelayReader::RelayReader(Endpoint* _endpoint,HostProxy* _hostProxy, PacketQueue&
 RelayReader::~RelayReader() {
 }
 
-void RelayReader::setNice(unsigned nice)
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void RelayReader::setNice(unsigned nice_)
 {
-	nice = (0 == nice)? 1:nice;
+	nice = (0 == nice_)? 1:nice_;
 }
 
 void RelayReader::relay_read_setup() {
@@ -96,14 +98,14 @@ void RelayReader::relay_read_setup() {
 				break;
 
 			case CONTROL_REQUEST_DISCONNECT:
-				manager->disconnectNotification(); // 1=non control eps
+				manager->disconnectNotification();
 				break;
 
 			case CONTROL_REQUEST_CONNECT:
 				manager->connectNotification();
 				break;
 
-			default:
+ 			default:
 				continue;
 			}
 		} else {
@@ -168,36 +170,53 @@ void RelayReader::relay_read() {
 			_sendQueue->enqueue(std::make_shared<Packet>(endpoint, buf, length));
 			zlpCount = 0;
 		}
+		// Recieve data can return two different results for a length of
+		// zero.  The two are differentiated by the value of buf.  If
+		// buf == nullptr there was no data received.  If buf != nullptr
+		// a ZLP was received.
+		//
 		// Zero Lenth Packets (ZLP) can be a problem.  If all ZLPs are
-		// passed the performance will suffer and buffers may (will?)
-		//  overflow.  ZLP canot be completly blocked as they are
-		// required by in some cases by the usb protocols (i.e. used for
+		// passed the performance will suffer and buffers may
+		// overflow.  ZLP cannot be completely blocked as they are
+		// required in some cases by the usb protocols (i.e. used for
 		// bulk transfers that are less than the requested size and a
 		// multiple of the maximum packet size).  I have also found that
 		// some drivers expect ZLP for no data and will have problems
 		// if they just get NAKs (gadgetfs default way to present no
-		// data).  To resolve this problem the code always sends the
-		// first ZLP, then periodically sends them afterwards.
+		// data).
+		//
+		// Two methods are used to reduce ZLPs.  DeviceProxy::nice
+		// keeps the first ZLP and every nth ZLP.  Ther rest are
+		// discarded.  The flow of ZLP can also be limited  with
+		// DeviceProxy::nice.  DeviceProxy::nice reduces the device
+		// polling rate which  also reduces the ZLP rate.
+		//
+		// The use of RelayReader::nice vs DeviceProxy::nice is
+		// application dependent.  Generally applications where there
+		// is heavy data output  and little input will have a higher
+		// DeviceProxy::nice settings and thus lower (typically 1 or 2)
+		//  RelayReader::nice setting.  Applications with heavy data
+		// input will have a low (zero?) DeviceProxy::nice setting and
+		// thus may have larger RelayReader::nice settings.
 		//
 		// Note: The setting of RelayReader::nice is heavily dependent
 		//       upon the DeviceProxy::nice, so care must be taken to
-		//       update RelayReader::nice whenever DeviceProxy::nice
+		//       update RelayReader::nice if DeviceProxy::nice
 		//       is changed.
 		//
+		// todo:  need to add more here... what to do when the host
+		//        is not polling to prevent buffer overflows
+		//
 		// todo: review: this is only really needed  when reading from
-		// the deviceProxy.  Should we change disable for hostProxy?
+		// the deviceProxy.  Should we change/disable for hostProxy?
 		else if (nullptr != buf) {
-			if ((zlpCount % 4) == 0) {
-				std::cout << "nullCount = " << zlpCount << std::endl;
+			if ((zlpCount % nice) == 0) {
 				_sendQueue->enqueue(std::make_shared<Packet>(endpoint, buf, length));
 				++zlpCount;
 			} else {
 				++zlpCount;
 				free(buf);
 			}
-
-		} else {
-			free(buf);
 		}
 	}
 	fprintf(stderr,"Finished reader thread (%ld) for EP%02x.\n",gettid(),endpoint);
