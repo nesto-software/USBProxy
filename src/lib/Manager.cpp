@@ -199,7 +199,7 @@ __u8 Manager::get_injector_count(){
 }
 
 void Manager::add_filter(PacketFilter* _filter){
-	// modified 20141015 atsumi@aizulab.com for reset bus
+	// modified 20141015 atsumi@aizulab.com for reset bust
 	if (status!=USBM_IDLE  && status != USBM_RESET) {fprintf(stderr,"Can't add filters unless manager is idle or reset.\n");}
 	if (filters) {
 		filters=(PacketFilter**)realloc(filters,++filterCount*sizeof(PacketFilter*));
@@ -550,6 +550,7 @@ void Manager::stopEps(unsigned start)
 }
 
 void Manager::stop_relaying(){
+	// msw don't realy like this... need to veridy it does what it supposed to
 	switch(status) {
 	case USBM_SETUP:
 		status=USBM_SETUP_ABORT;
@@ -601,13 +602,10 @@ void Manager::stop_relaying(){
 
 //------------------------------------------------------------------------------
 /// \brief  called by relayReader to notify manager of new host connection
-///
-/// hostDisconnect and hostConnect Notifications are usually caused from a
-/// usb reset
 //------------------------------------------------------------------------------
-void Manager::hostConnectNotification()
+void Manager::connectNotification()
 {
-	std::cerr << "==============connect" << std::endl;
+	std::cout << "==============connect" << std::endl;
 	// Some drivers do not allow enough time for the
 	// config command to run before a timeout occurs on bulk endpoints.
 	// this is workaround to avoid that by automatically setting the
@@ -616,18 +614,13 @@ void Manager::hostConnectNotification()
 }
 //------------------------------------------------------------------------------
 /// \brief  called by relayReader to notify manager of host disconnect
-///
-/// hostDisconnect and hostConnect Notifications are usually caused from a
-/// usb reset
 //------------------------------------------------------------------------------
-void Manager::hostDisconnectNotification()
+void Manager::disconnectNotification()
 {
-	std::cerr << "==============disconnect" << std::endl;
+	std::cout << "==============disconnect" << std::endl;
 	stopEps(ALL_ENDPOINTS_EXCEPT_EP0);
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void Manager::setConfig(__u8 index) {
 	if((configurationNumber != 0) && (configurationNumber != index)) {
 		stopEps(ALL_ENDPOINTS_EXCEPT_EP0);
