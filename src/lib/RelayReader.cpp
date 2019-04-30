@@ -22,7 +22,7 @@
 #define CTRL_REQUEST_TIMEOUT_MS 500
 #define READ_TIMEOUT_MS 1500
 
-RelayReader::RelayReader(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& sendQueue, Manager* _manager, unsigned nice_)
+RelayReader::RelayReader(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& sendQueue, Manager* _manager)
 	: _please_stop(false)
 	, _sendQueue(&sendQueue)
 	, _recvQueue(0)
@@ -34,7 +34,6 @@ RelayReader::RelayReader(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& sendQue
 	endpoint=_endpoint->get_descriptor()->bEndpointAddress;
 	attributes=_endpoint->get_descriptor()->bmAttributes;
 	maxPacketSize=_endpoint->get_descriptor()->wMaxPacketSize;
-	setNice(nice_);
 }
 
 RelayReader::RelayReader(Endpoint* _endpoint,HostProxy* _hostProxy, PacketQueue& sendQueue, PacketQueue& recvQueue, Manager* _manager)
@@ -42,8 +41,6 @@ RelayReader::RelayReader(Endpoint* _endpoint,HostProxy* _hostProxy, PacketQueue&
 	, _sendQueue(&sendQueue)
 	, _recvQueue(&recvQueue)
 	, manager(_manager)
-	, nice(1)
-
 {
 	proxy=NULL;
 	hostProxy=_hostProxy;
@@ -54,13 +51,6 @@ RelayReader::RelayReader(Endpoint* _endpoint,HostProxy* _hostProxy, PacketQueue&
 }
 
 RelayReader::~RelayReader() {
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-void RelayReader::setNice(unsigned nice_)
-{
-	nice = (0 == nice_)? 1:nice_;
 }
 
 void RelayReader::relay_read_setup() {
@@ -98,11 +88,11 @@ void RelayReader::relay_read_setup() {
 				break;
 
 			case CONTROL_REQUEST_DISCONNECT:
-				manager->disconnectNotification();
+				manager->hostDisconnectNotification();
 				break;
 
 			case CONTROL_REQUEST_CONNECT:
-				manager->connectNotification();
+				manager->hostConnectNotification();
 				break;
 
  			default:
@@ -170,7 +160,7 @@ void RelayReader::relay_read() {
 			_sendQueue->enqueue(std::make_shared<Packet>(endpoint, buf, length));
 			zlpCount = 0;
 		}
-		// Recieve data can return two different results for a length of
+		// Receive data can return two different results for a length of
 		// zero.  The two are differentiated by the value of buf.  If
 		// buf == nullptr there was no data received.  If buf != nullptr
 		// a ZLP was received.
@@ -185,36 +175,21 @@ void RelayReader::relay_read() {
 		// if they just get NAKs (gadgetfs default way to present no
 		// data).
 		//
-		// Two methods are used to reduce ZLPs.  DeviceProxy::nice
-		// keeps the first ZLP and every nth ZLP.  Ther rest are
-		// discarded.  The flow of ZLP can also be limited  with
+		// Two methods are used to reduce ZLPs.  relay_read only sends a
+		// ZLP after a non ZLP, or when the sendQuee is empty.
+		// The flow of ZLP can is also be limited  with
 		// DeviceProxy::nice.  DeviceProxy::nice reduces the device
 		// polling rate which  also reduces the ZLP rate.
-		//
-		// The use of RelayReader::nice vs DeviceProxy::nice is
-		// application dependent.  Generally applications where there
-		// is heavy data output  and little input will have a higher
-		// DeviceProxy::nice settings and thus lower (typically 1 or 2)
-		//  RelayReader::nice setting.  Applications with heavy data
-		// input will have a low (zero?) DeviceProxy::nice setting and
-		// thus may have larger RelayReader::nice settings.
-		//
-		// Note: The setting of RelayReader::nice is heavily dependent
-		//       upon the DeviceProxy::nice, so care must be taken to
-		//       update RelayReader::nice if DeviceProxy::nice
-		//       is changed.
-		//
-		// todo:  need to add more here... what to do when the host
-		//        is not polling to prevent buffer overflows
 		//
 		// todo: review: this is only really needed  when reading from
 		// the deviceProxy.  Should we change/disable for hostProxy?
 		else if (nullptr != buf) {
-			if ((zlpCount % nice) == 0) {
+
+			if ((!zlpCount) || _sendQueue->empty() ) {
 				_sendQueue->enqueue(std::make_shared<Packet>(endpoint, buf, length));
 				++zlpCount;
 			} else {
-				++zlpCount;
+			        ++zlpCount;
 				free(buf);
 			}
 		}

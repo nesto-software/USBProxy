@@ -69,13 +69,6 @@ Manager::Manager(ConfigParser *cfg_p)
 		out_writers[i]=NULL;
 	}
 
-	string pid_str = cfg_->get("RelayReader::nice");
-	if (pid_str == "") {
-		relayReaderNice = 0;
-	}
-	else {
-		relayReaderNice = stoi(pid_str, nullptr, 10);
-	}
         //todo sigaction / no SA_RESTART ???
 	signal(SIGUSR1, dummy_signal_handler);
 }
@@ -143,17 +136,6 @@ Manager::~Manager() {
 	}
 }
 
-void Manager::setRelayReaderNice(unsigned nice)
-{
-	relayReaderNice = nice;
-	// nice only needs to apply to in readers
-	for(unsigned i=0;i<16;i++) {
-		if (in_readers[i] != nullptr) {
-			in_readers[i]->setNice(nice);
-		}
-	}
-}
-
 void Manager::setDeviceProxyNice(unsigned nice)
 {
 	char str[16];
@@ -217,7 +199,7 @@ __u8 Manager::get_injector_count(){
 }
 
 void Manager::add_filter(PacketFilter* _filter){
-	// modified 20141015 atsumi@aizulab.com for reset bust
+	// modified 20141015 atsumi@aizulab.com for reset bus
 	if (status!=USBM_IDLE  && status != USBM_RESET) {fprintf(stderr,"Can't add filters unless manager is idle or reset.\n");}
 	if (filters) {
 		filters=(PacketFilter**)realloc(filters,++filterCount*sizeof(PacketFilter*));
@@ -419,13 +401,13 @@ void Manager::start_data_relaying() {
 	for (i=1;i<16;i++) {
 		if (in_endpoints[i]) {
 			if (!in_readers[i])
-				in_readers[i]=new RelayReader(in_endpoints[i],(Proxy*)deviceProxy, *in_queues[i], this, relayReaderNice);
+				in_readers[i]=new RelayReader(in_endpoints[i],(Proxy*)deviceProxy, *in_queues[i], this);
 			if(!in_writers[i])
 				in_writers[i]=new RelayWriter(in_endpoints[i],(Proxy*)hostProxy, *in_queues[i]);
 		}
 		if (out_endpoints[i]) {
 			if(!out_readers[i])
-				out_readers[i]=new RelayReader(out_endpoints[i],(Proxy*)hostProxy, *out_queues[i], this, relayReaderNice);
+				out_readers[i]=new RelayReader(out_endpoints[i],(Proxy*)hostProxy, *out_queues[i], this);
 			if(!out_writers[i])
 				out_writers[i]=new RelayWriter(out_endpoints[i],(Proxy*)deviceProxy, *out_queues[i]);
 		}
@@ -568,7 +550,6 @@ void Manager::stopEps(unsigned start)
 }
 
 void Manager::stop_relaying(){
-	// msw don't realy like this... need to veridy it does what it supposed to
 	switch(status) {
 	case USBM_SETUP:
 		status=USBM_SETUP_ABORT;
@@ -620,10 +601,13 @@ void Manager::stop_relaying(){
 
 //------------------------------------------------------------------------------
 /// \brief  called by relayReader to notify manager of new host connection
+///
+/// hostDisconnect and hostConnect Notifications are usually caused from a
+/// usb reset
 //------------------------------------------------------------------------------
-void Manager::connectNotification()
+void Manager::hostConnectNotification()
 {
-	std::cout << "==============connect" << std::endl;
+	std::cerr << "==============connect" << std::endl;
 	// Some drivers do not allow enough time for the
 	// config command to run before a timeout occurs on bulk endpoints.
 	// this is workaround to avoid that by automatically setting the
@@ -632,13 +616,18 @@ void Manager::connectNotification()
 }
 //------------------------------------------------------------------------------
 /// \brief  called by relayReader to notify manager of host disconnect
+///
+/// hostDisconnect and hostConnect Notifications are usually caused from a
+/// usb reset
 //------------------------------------------------------------------------------
-void Manager::disconnectNotification()
+void Manager::hostDisconnectNotification()
 {
-	std::cout << "==============disconnect" << std::endl;
+	std::cerr << "==============disconnect" << std::endl;
 	stopEps(ALL_ENDPOINTS_EXCEPT_EP0);
 }
 
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void Manager::setConfig(__u8 index) {
 	if((configurationNumber != 0) && (configurationNumber != index)) {
 		stopEps(ALL_ENDPOINTS_EXCEPT_EP0);

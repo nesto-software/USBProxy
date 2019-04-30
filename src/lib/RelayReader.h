@@ -25,10 +25,9 @@ private:
 	__u8 attributes;
 	__u16 maxPacketSize;
 	Manager* manager;
-	unsigned nice;
 
 public:
-	RelayReader(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& sendQueue, Manager* _manager, unsigned nice);
+	RelayReader(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& sendQueue, Manager* _manager);
 	RelayReader(Endpoint* _endpoint,HostProxy* _proxy, PacketQueue& sendQueue, PacketQueue& recvQueue, Manager* _manager);
 	virtual ~RelayReader();
 
@@ -40,7 +39,6 @@ public:
 		if (_recvQueue)
 			_recvQueue->enqueue(PacketPtr());
 	}
-	void setNice(unsigned nice);
 };
 
 #endif /* RELAYREADER_H_ */
