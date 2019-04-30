@@ -75,7 +75,6 @@ private:
 
 	ConfigParser *cfg_;
 	uint8_t configurationNumber;
-	unsigned relayReaderNice;
 
 public:
 	Manager(ConfigParser *);
@@ -104,9 +103,8 @@ public:
 	void start_control_relaying();
 	void stop_relaying();
 	void cleanup();
-	void disconnectNotification();
-	void connectNotification();
-	void setRelayReaderNice(unsigned);
+	void hostDisconnectNotification();
+	void hostConnectNotification();
 	void setDeviceProxyNice(unsigned nice);
 };
 

@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
+#include <string.h>
 
 #include "Manager.h"
 #include "TRACE.h"
@@ -199,7 +200,7 @@ __u8 Manager::get_injector_count(){
 }
 
 void Manager::add_filter(PacketFilter* _filter){
-	// modified 20141015 atsumi@aizulab.com for reset bust
+	// modified 20141015 atsumi@aizulab.com for reset bus
 	if (status!=USBM_IDLE  && status != USBM_RESET) {fprintf(stderr,"Can't add filters unless manager is idle or reset.\n");}
 	if (filters) {
 		filters=(PacketFilter**)realloc(filters,++filterCount*sizeof(PacketFilter*));
@@ -263,13 +264,26 @@ void Manager::start_control_relaying(){
 	status=USBM_SETUP;
 
 	//connect device proxy
-	int rc=deviceProxy->connect();
+	int rc;
+
 	spinner(0);
-	while (rc==ETIMEDOUT && status==USBM_SETUP) {
+	bool continueLoop;
+	do {
+		continueLoop = false;
 		spinner(1);
 		rc=deviceProxy->connect();
-	}
-	if (rc!=0) {fprintf(stderr,"Unable to connect to device proxy.\n");status=USBM_IDLE;return;}
+		switch (rc) {
+		case ETIMEDOUT:
+		case ENODEV:
+			if (USBM_SETUP == status) {
+				continueLoop = true;
+			}
+			break;
+		default:
+			break;
+		}
+	} while (continueLoop);
+	if (rc!=0) {fprintf(stderr,"Unable to connect to device proxy, error = (%d) %s\n", rc, strerror(rc));status=USBM_IDLE;return;}
 
 	//populate device model
 	device=new Device(deviceProxy);
@@ -550,7 +564,6 @@ void Manager::stopEps(unsigned start)
 }
 
 void Manager::stop_relaying(){
-	// msw don't realy like this... need to veridy it does what it supposed to
 	switch(status) {
 	case USBM_SETUP:
 		status=USBM_SETUP_ABORT;
@@ -602,10 +615,13 @@ void Manager::stop_relaying(){
 
 //------------------------------------------------------------------------------
 /// \brief  called by relayReader to notify manager of new host connection
+///
+/// hostDisconnect and hostConnect Notifications are usually caused from a
+/// usb reset
 //------------------------------------------------------------------------------
-void Manager::connectNotification()
+void Manager::hostConnectNotification()
 {
-	std::cout << "==============connect" << std::endl;
+	std::cerr << "==============connect" << std::endl;
 	// Some drivers do not allow enough time for the
 	// config command to run before a timeout occurs on bulk endpoints.
 	// this is workaround to avoid that by automatically setting the
@@ -614,13 +630,18 @@ void Manager::connectNotification()
 }
 //------------------------------------------------------------------------------
 /// \brief  called by relayReader to notify manager of host disconnect
+///
+/// hostDisconnect and hostConnect Notifications are usually caused from a
+/// usb reset
 //------------------------------------------------------------------------------
-void Manager::disconnectNotification()
+void Manager::hostDisconnectNotification()
 {
-	std::cout << "==============disconnect" << std::endl;
+	std::cerr << "==============disconnect" << std::endl;
 	stopEps(ALL_ENDPOINTS_EXCEPT_EP0);
 }
 
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void Manager::setConfig(__u8 index) {
 	if((configurationNumber != 0) && (configurationNumber != index)) {
 		stopEps(ALL_ENDPOINTS_EXCEPT_EP0);

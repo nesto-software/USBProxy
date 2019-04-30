@@ -28,7 +28,7 @@ int resetCount = 1;
 static DeviceProxy_LibUSB *proxy;
 
 extern "C" {
-// for handling events of hotploug.
+// for handling events of hotplug.
 int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev, libusb_hotplug_event envet,
 		void *user_data) {
 	sleep(1);
@@ -55,7 +55,7 @@ DeviceProxy_LibUSB::DeviceProxy_LibUSB(int vendorId, int productId, bool include
 	context = NULL;
 	dev_handle = NULL;
 
-	// for handling events of hotploug.
+	// for handling events of hotplug.
 	callback_handle = -1;
 
 	privateContext = true;
@@ -104,7 +104,7 @@ DeviceProxy_LibUSB::DeviceProxy_LibUSB(ConfigParser *cfg) :
 	context = NULL;
 	dev_handle = NULL;
 
-	// for handling events of hotploug.
+	// for handling events of hotplug.
 	callback_handle = -1;
 
 	privateContext = true;
@@ -120,10 +120,8 @@ DeviceProxy_LibUSB::DeviceProxy_LibUSB(ConfigParser *cfg) :
 	}
 }
 
-
-
 DeviceProxy_LibUSB::~DeviceProxy_LibUSB() {
-	// for handling events of hotploug.
+	// for handling events of hotplug.
 	if (context && callback_handle != -1) {
 		libusb_hotplug_deregister_callback(context, callback_handle);
 	}
@@ -145,6 +143,8 @@ int DeviceProxy_LibUSB::connect(int timeout) {
 	return connect(desired_vid, desired_pid, desired_hubs);
 }
 
+
+#if 0 // not used
 int DeviceProxy_LibUSB::connect(libusb_device* dvc, libusb_context* _context) {
 	if (dev_handle) {
 		cerr << "LibUSB already connected." << endl;
@@ -184,6 +184,7 @@ int DeviceProxy_LibUSB::connect(libusb_device_handle* devh, libusb_context* _con
 	}
 	return 0;
 }
+#endif
 
 int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 	if (dev_handle) {
@@ -193,7 +194,7 @@ int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 	privateContext = true;
 	privateDevice = true;
 	libusb_init(&context);
-
+	// todo change this setting ?
 	libusb_set_debug(context, 3);
 
 	libusb_device **list = NULL;
@@ -204,6 +205,7 @@ int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 		if (debugLevel) {
 			cerr << "Error retrieving device list: " << libusb_strerror((libusb_error) cnt) << endl;
 		}
+		libusb_exit(context);
 		return cnt;
 	}
 
@@ -234,7 +236,8 @@ int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 			cerr << "No device found." << endl;
 		}
 		libusb_free_device_list(list, 1);
-		return -1;
+		libusb_exit(context);
+		return ENODEV;
 	} else {
 		rc = libusb_open(found, &dev_handle);
 		if (rc != LIBUSB_SUCCESS) {
@@ -243,6 +246,7 @@ int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 			}
 			dev_handle = NULL;
 			libusb_free_device_list(list, 1);
+			libusb_exit(context);
 			return rc;
 		}
 	}
@@ -253,6 +257,7 @@ int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 	rc = libusb_set_auto_detach_kernel_driver(dev_handle, 1);
 	if (rc != LIBUSB_SUCCESS) {
 		cerr << "libusb_set_auto_detach_kernel_driver() failed: " << libusb_strerror((libusb_error) rc) << endl;
+		libusb_exit(context);
 		return rc;
 	}
 	//end
@@ -262,6 +267,7 @@ int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 	rc = libusb_get_string_descriptor(dev_handle, 0, 0, unused, sizeof(unused));
 	if (rc < 0) {
 		cerr << "Device unresponsive: " << libusb_strerror((libusb_error) rc) << endl;
+		libusb_exit(context);
 		return rc;
 	}
 
@@ -271,7 +277,7 @@ int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 		free(device_desc);
 	}
 
-	// for handling events of hotploug.
+	// for handling events of hotplug.
 	// begin
 	if (callback_handle == -1) {
 		rc = libusb_hotplug_register_callback(context, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, (libusb_hotplug_flag) 0,
@@ -289,7 +295,7 @@ int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 }
 
 void DeviceProxy_LibUSB::disconnect() {
-	// for handling events of hotploug.
+	// for handling events of hotplug.
 	if (context && callback_handle != -1) {
 		libusb_hotplug_deregister_callback(context, callback_handle);
 	}
@@ -439,7 +445,6 @@ void DeviceProxy_LibUSB::send_data(uint8_t endpoint, uint8_t attributes, uint16_
 				cerr << "Sent " << transferred << " bytes (Bulk) to libusb EP" << hex2(endpoint) << endl;
 			if ((rc == LIBUSB_ERROR_PIPE || rc == LIBUSB_ERROR_TIMEOUT))
 				libusb_clear_halt(dev_handle, endpoint);
-
 			attempt++;
 		} while ((rc == LIBUSB_ERROR_PIPE || rc == LIBUSB_ERROR_TIMEOUT || transferred != length) && attempt < MAX_ATTEMPTS);
 		break;
@@ -495,8 +500,7 @@ void DeviceProxy_LibUSB::receive_data(uint8_t endpoint, uint8_t attributes, uint
 		// little input (i.e. a printer), continuously doing reads
 		// can severely impact performance.  As a simple solution to
 		// resolve this we throttle the polling for "DeviceProxy::nice"
-		// ms between reads.  Use of this parameter depends heavily
-		// upon application.
+		// ms between reads.  This depends heavily upon the application.
 
 		// Zero Lenth Packets (ZLP) can be a problem.  If all ZLPs are
 		// passed the performance will suffer and buffers may
@@ -508,30 +512,24 @@ void DeviceProxy_LibUSB::receive_data(uint8_t endpoint, uint8_t attributes, uint
 		// if they just get NAKs (gadgetfs default way to present no
 		// data).
 		//
-		// Two methods are used to reduce ZLPs.  DeviceProxy::nice
-		// keeps the first ZLP and every nth ZLP.  Ther rest are
-		// discarded.  The flow of ZLP can also be limited  with
+		// Two methods are used to reduce ZLPs.  relay_read only sends a
+		// ZLP after a non ZLP, or when the sendQuee is empty.
+		// The flow of ZLP can is also  limited  with
 		// DeviceProxy::nice.  DeviceProxy::nice reduces the device
 		// polling rate which  also reduces the ZLP rate.
 		//
-		// The use of RelayReader::nice vs DeviceProxy::nice is
-		// application dependent.  Generally applications where there
-		// is heavy data output  and little input will have a higher
-		// DeviceProxy::nice settings and thus lower (typically 1 or 2)
-		//  RelayReader::nice setting.  Applications with heavy data
-		// input will have a low (zero?) DeviceProxy::nice setting and
-		// thus may have larger RelayReader::nice settings.
+		// todo do we want to change this so we only read ( at nice 0)
+		// when the receive queue is empty???  will it cause worse or
+		// better latencies? how feasible is it? (how should we wait for
+		// an empty queue)
 		//
-		// Note: The setting of RelayReader::nice is heavily dependent
-		//       upon the DeviceProxy::nice, so care must be taken to
-		//       update RelayReader::nice if DeviceProxy::nice
-		//       is changed.
-		//
+		// todo: review changing the operations to asynchronous to allow
+		// cancelling of operations.  this alos applies to send_data
 
 
 		if ((0 == rxAttempt) && (0 != nice)){
 			std::this_thread::sleep_for(std::chrono::milliseconds(nice));
-			rxAttempt = 1;
+			rxAttempt++;
 			return;
 		}
 
@@ -557,8 +555,7 @@ void DeviceProxy_LibUSB::receive_data(uint8_t endpoint, uint8_t attributes, uint
 		free(*dataptr);
 		*dataptr = nullptr;
 		*length = 0;
-	}
-	else {
+	} else {
 		rxAttempt = 0;
 	}
 
