@@ -9,10 +9,11 @@
 #include <unordered_map>
 #include <string>
 
-#include "DeviceProxy.h"
-#include "HostProxy.h"
-#include "PacketFilter.h"
-#include "Injector.h"
+class DeviceProxy;
+class HostProxy;
+class PacketFilter;
+class Injector;
+class ConfigParser;
 
 /* Expand this list as needed */
 enum plugin_manager_error {
@@ -33,12 +34,12 @@ class PluginManager
 		HostProxy* host_proxy;
 		std::vector<PacketFilter*> filters;
 		std::vector<Injector*> injectors;
-		
+
 		PluginManager(){};
 		int load_plugins(ConfigParser *cfg);
 		void add_plugin(PacketFilter* plugin);
 		void add_plugin(Injector* plugin);
 		void destroy_plugins();
-	
+
 };
 #endif /* USBPROXY_PLUGIN_MANAGER_H */

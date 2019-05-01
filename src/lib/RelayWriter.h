@@ -6,7 +6,6 @@
 #define RELAYWRITER_H_
 
 #include <linux/types.h>
-#include <mqueue.h>
 #include <vector>
 #include <atomic>
 #include <zmq.hpp>

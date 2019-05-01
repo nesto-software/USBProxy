@@ -7,7 +7,7 @@
 
 #include <linux/usb/ch9.h>
 #include "Proxy.h"
-#include "Device.h"
+class Device;
 
 #define CONTROL_REQUEST_SETUP 1
 #define CONTROL_REQUEST_DISCONNECT 2

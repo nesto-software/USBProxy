@@ -22,6 +22,7 @@
 #include "Configuration.h"
 #include "Interface.h"
 #include "Endpoint.h"
+#include "Device.h"
 
 #define hex2(VALUE) std::setfill('0') << std::setw(2) << std::hex << (unsigned)VALUE << std::dec
 

@@ -8,6 +8,10 @@
 
 #include "Plugins.h"
 #include "PluginManager.h"
+#include "DeviceProxy.h"
+#include "HostProxy.h"
+#include "PacketFilter.h"
+#include "Injector.h"
 
 // FIXME: replace all of this repetative code with something based on Templates
 
@@ -21,7 +25,7 @@ void *PluginManager::load_shared_lib(std::string plugin_name) {
 	void* plugin_lib = dlopen(plugin_file.c_str(), RTLD_LAZY);
 	if(!plugin_lib)
 		fprintf(stderr, "error opening library %s\n",  dlerror());
-	
+
 	return plugin_lib;
 }
 
@@ -36,7 +40,7 @@ int PluginManager::load_plugins(ConfigParser *cfg)
 	host_plugin_getter hp_ptr;
 	filter_plugin_getter f_ptr;
 	injector_plugin_getter i_ptr;
-	
+
 	// Device Proxy
 	void* dplugin_lib = load_shared_lib(cfg->get("DeviceProxy"));
 	if(!dplugin_lib)
@@ -49,7 +53,7 @@ int PluginManager::load_plugins(ConfigParser *cfg)
 	handleList.push_back(plugin_func);
 	dp_ptr = *reinterpret_cast<device_plugin_getter*>(&plugin_func);
 	device_proxy = (*(dp_ptr))(cfg);
-	
+
 	// Host Proxy
 	void* hplugin_lib = load_shared_lib(cfg->get("HostProxy"));
 	if(!hplugin_lib)
@@ -62,7 +66,7 @@ int PluginManager::load_plugins(ConfigParser *cfg)
 	handleList.push_back(plugin_func);
 	hp_ptr = *reinterpret_cast<host_plugin_getter*>(&plugin_func);
 	host_proxy = (*(hp_ptr))(cfg);
-	
+
 	// Plugins
 	std::vector<std::string> plugin_names=cfg->get_vector("Plugins");
 	for(std::vector<std::string>::iterator it = plugin_names.begin();
@@ -76,7 +80,7 @@ int PluginManager::load_plugins(ConfigParser *cfg)
 			continue;
 		}
 		int plugin_type = *static_cast<int *>(plugin_func);
-		
+
 		switch (plugin_type) {
 			case PLUGIN_FILTER:
 				plugin_func = dlsym(plugin_lib, "get_plugin");
@@ -130,7 +134,7 @@ void PluginManager::add_plugin(Injector* plugin)
 }
 
 void PluginManager::destroy_plugins()
-{	
+{
 	for(std::vector<void*>::iterator it = handleList.begin();
 		it != handleList.end(); ++it)
 	{
