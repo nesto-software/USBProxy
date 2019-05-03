@@ -113,6 +113,9 @@ int PluginManager::load_plugins(ConfigParser *cfg)
 				filter = (*(f_ptr))(cfg);
 				filters.push_back(filter);
 				injectors.push_back(dynamic_cast<Injector*>(filter));
+				// this is a bit of a hack to solve double delete
+				// on hotplug
+				dynamic_cast<Injector*>(filter)->plugin_type=plugin_type;
 				break;
 			default:
 				dlclose(plugin_lib);

@@ -34,6 +34,8 @@ private:
 
 	bool endpoint_interface_claimed(uint8_t endpoint);
 	unsigned nice;
+	std::thread libusbThread;
+	void libusbEventLoop();
 
 public:
 	DeviceProxy_LibUSB(int vendorId = LIBUSB_HOTPLUG_MATCH_ANY, int productId = LIBUSB_HOTPLUG_MATCH_ANY,
@@ -65,6 +67,7 @@ public:
 	uint8_t get_address();
 	char* toString();
 	void setNice(unsigned nice);
+	bool please_stop;
 	int rxAttempt = 0;
 };
 

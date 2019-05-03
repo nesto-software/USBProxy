@@ -52,9 +52,7 @@ void clean_tmp() {
 	dir = opendir("/tmp");
 	if (!dir) return;
 
-	entry = malloc(offsetof(struct dirent, d_name) + fpathconf(dirfd(dir), _PC_NAME_MAX) + 1);
-
-	fprintf(stderr,"cleaning up /tmp\n");
+	//fprintf(stderr,"cleaning up /tmp\n");
 
 	if (!entry) {
 		closedir (dir);
@@ -74,9 +72,7 @@ void clean_tmp() {
 			rmDirs[rmCount-1]=strdup(entry->d_name);
 		}
 	}
-	free(entry);
-
-	fprintf(stderr,"removing %d\n",rmCount);
+	//fprintf(stderr,"removing %d\n",rmCount);
 	for (i=0;i<rmCount;i++) {
 		char buf[20]={0x0};
 		strcat(buf,"/tmp/");
@@ -259,5 +255,6 @@ int open_endpoint(__u8 epAddress, const char * gadget_filename) {
 
 	char path[256];
 	snprintf(path, sizeof(path), "%s/ep%d%s", gadgetfs_path, number,direction);
-	return open(path, O_CLOEXEC | O_RDWR);
+	int rc = open(path, O_CLOEXEC | O_RDWR);
+	return rc;
 }

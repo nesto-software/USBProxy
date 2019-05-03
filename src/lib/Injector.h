@@ -68,7 +68,7 @@ protected:
 
 public:
 
-	static const __u8 plugin_type=PLUGIN_INJECTOR;
+	__u8 plugin_type=PLUGIN_INJECTOR;
 	/// \brief endpoint filter
 	struct criteria_endpoint endpoint;
 	/// \brief interface filter
@@ -88,7 +88,10 @@ public:
 		_please_stop = true;
 	}
 
+	//---------------------------------------------------------------------
+	//---------------------------------------------------------------------
 	void set_queue(__u8 epAddress, PacketQueue& queue);
+
 	//---------------------------------------------------------------------
 	/// \brief main list loop
 	///
@@ -101,6 +104,8 @@ public:
 	//---------------------------------------------------------------------
 	virtual void listen();
 
+	//---------------------------------------------------------------------
+	//---------------------------------------------------------------------
 	virtual const char* toString() {return "Injector";}
 
 };

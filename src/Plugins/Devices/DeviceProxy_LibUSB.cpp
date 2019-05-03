@@ -1,6 +1,7 @@
 /*
  * This file is part of USBProxy.
  */
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -16,6 +17,7 @@
 #include "DeviceProxy_LibUSB.h"
 #include "TRACE.h"
 #include "HexString.h"
+#include "get_tid.h"
 
 using namespace std;
 
@@ -27,12 +29,25 @@ int resetCount = 1;
 
 static DeviceProxy_LibUSB *proxy;
 
+
+
 extern "C" {
 // for handling events of hotplug.
-int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev, libusb_hotplug_event envet,
+
+static void disconnect_notifier( DeviceProxy_LibUSB* deviceProxy) {
+	deviceProxy->please_stop = true;
+	if (nullptr !=deviceProxy->disconnectNotifierCallback) {
+		deviceProxy->disconnectNotifierCallback();
+	} else {
+		// todo from old code not sure why?
+		sleep(1);
+		kill(0, SIGHUP);
+	}
+}
+
+static int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev, libusb_hotplug_event envet,
 		void *user_data) {
-	sleep(1);
-	kill(0, SIGHUP);
+	disconnect_notifier((DeviceProxy_LibUSB*)user_data);
 	return 0;
 }
 
@@ -46,11 +61,10 @@ void destroy_plugin() {
 }
 }
 
-//CLEANUP hotplug support
-//todo not used anywhere yet
-
-DeviceProxy_LibUSB::DeviceProxy_LibUSB(int vendorId, int productId, bool includeHubs):
-	 rxAttempt(0)
+DeviceProxy_LibUSB::DeviceProxy_LibUSB(int vendorId, int productId, bool includeHubs)
+	: libusbThread()
+	, please_stop(false)
+	, rxAttempt(0)
 {
 	context = NULL;
 	dev_handle = NULL;
@@ -73,6 +87,8 @@ DeviceProxy_LibUSB::DeviceProxy_LibUSB(int vendorId, int productId, bool include
 
 DeviceProxy_LibUSB::DeviceProxy_LibUSB(ConfigParser *cfg) :
 		DeviceProxy(*cfg)
+		, libusbThread()
+		, please_stop(false)
 		, rxAttempt(0)
 	{
 	int vendorId, productId;
@@ -122,6 +138,7 @@ DeviceProxy_LibUSB::DeviceProxy_LibUSB(ConfigParser *cfg) :
 
 DeviceProxy_LibUSB::~DeviceProxy_LibUSB() {
 	// for handling events of hotplug.
+	please_stop = true;
 	if (context && callback_handle != -1) {
 		libusb_hotplug_deregister_callback(context, callback_handle);
 	}
@@ -131,6 +148,9 @@ DeviceProxy_LibUSB::~DeviceProxy_LibUSB() {
 	}
 	if (privateContext && context) {
 		libusb_exit(context);
+	}
+	if (libusbThread.joinable()) {
+		libusbThread.join();
 	}
 }
 
@@ -186,6 +206,14 @@ int DeviceProxy_LibUSB::connect(libusb_device_handle* devh, libusb_context* _con
 }
 #endif
 
+void DeviceProxy_LibUSB::libusbEventLoop() {
+	fprintf(stderr,"Starting libusbEventLoop thread (%ld) \n",gettid());
+	while(!please_stop) {
+		libusb_handle_events(context);
+	}
+	fprintf(stderr,"Finished libusbEventLoop thread (%ld) \n",gettid());
+}
+
 int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 	if (dev_handle) {
 		cerr << "LibUSB already connected." << endl;
@@ -195,7 +223,8 @@ int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 	privateDevice = true;
 	libusb_init(&context);
 	// todo change this setting ?
-	libusb_set_debug(context, 3);
+
+	libusb_set_debug(context,  std::min(static_cast<int>(debugLevel * 2 + 1), 4));
 
 	libusb_device **list = NULL;
 	libusb_device *found = NULL;
@@ -257,6 +286,7 @@ int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 	rc = libusb_set_auto_detach_kernel_driver(dev_handle, 1);
 	if (rc != LIBUSB_SUCCESS) {
 		cerr << "libusb_set_auto_detach_kernel_driver() failed: " << libusb_strerror((libusb_error) rc) << endl;
+		libusb_close(dev_handle);
 		libusb_exit(context);
 		return rc;
 	}
@@ -267,6 +297,7 @@ int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 	rc = libusb_get_string_descriptor(dev_handle, 0, 0, unused, sizeof(unused));
 	if (rc < 0) {
 		cerr << "Device unresponsive: " << libusb_strerror((libusb_error) rc) << endl;
+		libusb_close(dev_handle);
 		libusb_exit(context);
 		return rc;
 	}
@@ -277,20 +308,37 @@ int DeviceProxy_LibUSB::connect(int vendorId, int productId, bool includeHubs) {
 		free(device_desc);
 	}
 
+
+	// Todo: I don't know how much of a performance impact the libusb idle
+	// loop has on performance.  Woud checking read/write status then
+	// calling the call back routines on a disconnect be a better solution?
+
 	// for handling events of hotplug.
-	// begin
-	if (callback_handle == -1) {
-		rc = libusb_hotplug_register_callback(context, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, (libusb_hotplug_flag) 0,
-				desc.idVendor, desc.idProduct, LIBUSB_HOTPLUG_MATCH_ANY, hotplug_callback, NULL, &callback_handle);
+	if (callback_handle == -1 ) {
+
+		rc = libusb_hotplug_register_callback(
+			context,
+			LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
+			(libusb_hotplug_flag) 0,
+			desc.idVendor,
+			desc.idProduct,
+			LIBUSB_HOTPLUG_MATCH_ANY,
+			hotplug_callback,
+			this,
+			&callback_handle);
 
 		if (rc != LIBUSB_SUCCESS) {
 			cerr << "Error registering callback" << endl;
+			libusb_close(dev_handle);
 			libusb_exit(context);
 			return rc;
 		}
+		else
+		{
+			please_stop = false;
+			libusbThread = std::thread(&DeviceProxy_LibUSB::libusbEventLoop, this);
+		}
 	}
-	// end
-
 	return 0;
 }
 
@@ -446,7 +494,7 @@ void DeviceProxy_LibUSB::send_data(uint8_t endpoint, uint8_t attributes, uint16_
 			if ((rc == LIBUSB_ERROR_PIPE || rc == LIBUSB_ERROR_TIMEOUT))
 				libusb_clear_halt(dev_handle, endpoint);
 			attempt++;
-		} while ((rc == LIBUSB_ERROR_PIPE || rc == LIBUSB_ERROR_TIMEOUT || transferred != length) && attempt < MAX_ATTEMPTS);
+		} while ((rc == LIBUSB_ERROR_PIPE || rc == LIBUSB_ERROR_TIMEOUT || transferred != length) && (attempt < MAX_ATTEMPTS) && (!please_stop));
 		break;
 	case USB_ENDPOINT_XFER_INT:
 		rc = libusb_interrupt_transfer(dev_handle, endpoint, dataptr, length, &transferred, 0);
@@ -457,10 +505,12 @@ void DeviceProxy_LibUSB::send_data(uint8_t endpoint, uint8_t attributes, uint16_
 			cerr << "Sent " << transferred << " bytes (Int) to libusb EP" << hex2(endpoint) << endl;
 		break;
 	}
-	if (rc != LIBUSB_SUCCESS)
+	if ((rc != LIBUSB_SUCCESS) && (!please_stop)) {
+		// todo we get this error message when connection is lost... how to filter?
 		cerr << "Transfer error sending on EP" << hex2(endpoint) << " (xfertype "
 				<< unsigned(attributes & USB_ENDPOINT_XFERTYPE_MASK) << ")" << ": "
 				<< libusb_strerror((libusb_error) rc) << endl;
+	}
 }
 
 void DeviceProxy_LibUSB::receive_data(uint8_t endpoint, uint8_t attributes, uint16_t maxPacketSize, uint8_t ** dataptr,
@@ -591,9 +641,10 @@ void DeviceProxy_LibUSB::claim_interface(uint8_t interface) {
 void DeviceProxy_LibUSB::release_interface(uint8_t interface) {
 	if (is_connected()) {
 		int rc = libusb_release_interface(dev_handle, interface);
-		if (rc != LIBUSB_SUCCESS && rc != LIBUSB_ERROR_NOT_FOUND) {
-			cerr << "Error releasing interface " << (unsigned) interface << ": " << libusb_strerror((libusb_error) rc)
-					<< endl;
+		if (rc != LIBUSB_SUCCESS && rc != LIBUSB_ERROR_NOT_FOUND && rc != LIBUSB_ERROR_NO_DEVICE) {
+			cerr << "Error releasing interface " <<
+			    (unsigned) interface << ": " << rc << " " <<
+			    libusb_strerror((libusb_error) rc) << endl;
 		} else {
 			for (unsigned int i = 0; i < sizeof(epInterfaces) / sizeof(*epInterfaces); ++i) {
 				if (epInterfaces[i].defined && epInterfaces[i].interface == interface) {
@@ -603,3 +654,7 @@ void DeviceProxy_LibUSB::release_interface(uint8_t interface) {
 		}
 	}
 }
+
+
+
+

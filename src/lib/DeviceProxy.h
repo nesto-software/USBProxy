@@ -7,11 +7,18 @@
 
 #include <linux/usb/ch9.h>
 #include "Proxy.h"
+#include <functional>
 
 class Configuration;
 
 class DeviceProxy : public Proxy {
+	typedef std::function<void()> cbVV_t;
+
+private:
+	virtual void disconnectCallback() {}
+
 public:
+
 	static const __u8 plugin_type=PLUGIN_DEVICEPROXY;
 
 	DeviceProxy(const ConfigParser& cfg)
@@ -44,6 +51,9 @@ public:
 
 	virtual __u8 get_address()=0;
 	virtual void setNice(unsigned nice) {}
+	cbVV_t disconnectNotifierCallback = nullptr;
+	virtual void setDisconnectNotifierCallback(cbVV_t func) {disconnectNotifierCallback = func;}
+
 
 };
 

@@ -45,29 +45,33 @@ static void dummy_signal_handler(int x)
 }
 
 Manager::Manager(ConfigParser *cfg_p)
-	: _debug_level(cfg_p->debugLevel)
+	: _readersend()
+	, _writersend()
+	, _debug_level(cfg_p->debugLevel)
 	,  cfg_(cfg_p)
 	, configurationNumber(0)
 {
 	status=USBM_IDLE;
 	plugin_manager = new PluginManager();
-	deviceProxy=NULL;
-	hostProxy=NULL;
-	device=NULL;
-	filters=NULL;
+	deviceProxy=nullptr;
+	hostProxy=nullptr;
+	device=nullptr;
+	filters=nullptr;
 	filterCount=0;
-	injectors=NULL;
+	injectors=nullptr;
 	injectorCount=0;
 
 	int i;
 	for(i=0;i<16;i++) {
-		in_endpoints[i]=NULL;
-		in_readers[i]=NULL;
-		in_writers[i]=NULL;
+		in_endpoints[i] = nullptr;
+		in_readers[i] = nullptr;
+		in_writers[i] = nullptr;
+		in_queues[i] = nullptr;
 
-		out_endpoints[i]=NULL;
-		out_readers[i]=NULL;
-		out_writers[i]=NULL;
+		out_endpoints[i] = nullptr;
+		out_readers[i] = nullptr;
+		out_writers[i] = nullptr;
+		out_queues[i] = nullptr;
 	}
 
         //todo sigaction / no SA_RESTART ???
@@ -137,8 +141,7 @@ Manager::~Manager() {
 	}
 }
 
-void Manager::setDeviceProxyNice(unsigned nice)
-{
+void Manager::setDeviceProxyNice(unsigned nice) {
 	char str[16];
 	snprintf(str,sizeof(str),"%d",nice);
 	cfg_->set("DeviceProxy::nice", str);
@@ -172,7 +175,7 @@ void Manager::add_injector(Injector* _injector){
 	injectors[injectorCount-1]=_injector;
 }
 
-void Manager::remove_injector(__u8 index,bool freeMemory){
+void Manager::remove_injector(__u8 index, bool freeMemory){
 	// modified 20141015 atsumi@aizulab.com for reset bust
 	if (status!=USBM_IDLE && status != USBM_RESET) {fprintf(stderr,"Can't remove injectors unless manager is idle or reset.\n");}
 	if (!injectors || index>=injectorCount) {fprintf(stderr,"Injector index out of bounds.\n");}
@@ -239,14 +242,34 @@ __u8 Manager::get_filter_count(){
 }
 
 void spinner(int dir) {
-	static int i;
-	if (dir==0) {i=-1;return;}
-	const char* spinchar="|/-\\";
-	if (i==-1) {i=0;} else {putchar('\x8');}
-	putchar(spinchar[i]);
-	i+=dir;
-	if (i<0) i=3;
-	if (i>3) i=0;
+	static int i = -1;
+	static time_t lastTime = 0;
+
+	if (dir==0) {i=-1; lastTime = 0; return;}
+
+
+
+	// if a logfile
+	if (!isatty(STDOUT_FILENO))
+	{
+		time_t t;
+		time(&t);
+		t |= 0x7;  // every 8 seconds
+		if (t == lastTime)
+		{
+			return;
+		}
+		putchar('.');
+		lastTime = t;
+	} else {
+		const char* spinchar="|/-\\";
+		if (i==-1) {i=0;} else {putchar('\x8');}
+		putchar(spinchar[i]);
+		i+=dir;
+		if (i<0) i=3;
+		if (i>3) i=0;
+	}
+
 	fflush(stdout);
 }
 
@@ -266,8 +289,8 @@ void Manager::start_control_relaying(){
 	//connect device proxy
 	int rc;
 
-	spinner(0);
 	bool continueLoop;
+	spinner(0);
 	do {
 		continueLoop = false;
 		spinner(1);
@@ -284,6 +307,8 @@ void Manager::start_control_relaying(){
 		}
 	} while (continueLoop);
 	if (rc!=0) {fprintf(stderr,"Unable to connect to device proxy, error = (%d) %s\n", rc, strerror(rc));status=USBM_IDLE;return;}
+
+	deviceProxy->setDisconnectNotifierCallback(std::bind(&Manager::deviceDisconnectNotification, this));
 
 	//populate device model
 	device=new Device(deviceProxy);
@@ -314,8 +339,8 @@ void Manager::start_control_relaying(){
 	if (status!=USBM_SETUP) {stop_relaying();return;}
 
 	//setup EP0 Reader & Writer
-	out_readers[0]=new RelayReader(out_endpoints[0],hostProxy, _readersend, _writersend,this);
-	out_writers[0]=new RelayWriter(out_endpoints[0],deviceProxy,this, _readersend, _writersend);
+	out_readers[0]=new RelayReader(out_endpoints[0],hostProxy, _readersend, _writersend, this);
+	out_writers[0]=new RelayWriter(out_endpoints[0],deviceProxy, this, _readersend, _writersend);
 
 	//apply filters to relayers
 	int i;
@@ -506,9 +531,7 @@ void Manager::stopEps(unsigned start)
 	//wait for all relayer threads to stop, then delete relayer objects
 	for(i=start;i<16;i++) {
 
-		if (in_endpoints[i]) {in_endpoints[i]=NULL;}
-		fprintf(stderr, "in_readers length: %d\n", in_readers[i]);
-
+		if (in_endpoints[i]) {in_endpoints[i]=nullptr;}
 		if (in_readers[i]) {
 			fprintf(stderr, "JOINABLE?: %d\n", in_readerThreads[i].joinable());
 
@@ -517,7 +540,7 @@ void Manager::stopEps(unsigned start)
 				in_readerThreads[i].join();
 			}
 			delete(in_readers[i]);
-			in_readers[i]=NULL;
+			in_readers[i]=nullptr;
 			delete(in_queues[i]);
 			in_queues[i] = nullptr;
 		}
@@ -527,16 +550,16 @@ void Manager::stopEps(unsigned start)
 				in_writerThreads[i].join();
 			}
 			delete(in_writers[i]);
-			in_writers[i]=NULL;
+			in_writers[i]=nullptr;
 		}
 
-		if (out_endpoints[i]) {out_endpoints[i]=NULL;}
+		if (out_endpoints[i]) {out_endpoints[i]=nullptr;}
 		if (out_readers[i]) {
 			if (out_readerThreads[i].joinable()) {
 				out_readerThreads[i].join();
 			}
 			delete(out_readers[i]);
-			out_readers[i]=NULL;
+			out_readers[i]=nullptr;
 			delete(out_queues[i]);
 			out_queues[i] = nullptr;
 		}
@@ -546,7 +569,7 @@ void Manager::stopEps(unsigned start)
 				out_writerThreads[i].join();
 			}
 			delete(out_writers[i]);
-			out_writers[i]=NULL;
+			out_writers[i]=nullptr ;
 		}
 	}
 
@@ -619,25 +642,33 @@ void Manager::stop_relaying(){
 /// hostDisconnect and hostConnect Notifications are usually caused from a
 /// usb reset
 //------------------------------------------------------------------------------
-void Manager::hostConnectNotification()
-{
-	std::cerr << "==============connect" << std::endl;
+void Manager::hostConnectNotification() {
+	std::cerr << "============== Host Connect" << std::endl;
 	// Some drivers do not allow enough time for the
 	// config command to run before a timeout occurs on bulk endpoints.
 	// this is workaround to avoid that by automatically setting the
 	// coniguration to the first configuration.
 	// setConfig(1);
 }
+
 //------------------------------------------------------------------------------
 /// \brief  called by relayReader to notify manager of host disconnect
 ///
 /// hostDisconnect and hostConnect Notifications are usually caused from a
 /// usb reset
 //------------------------------------------------------------------------------
-void Manager::hostDisconnectNotification()
-{
-	std::cerr << "==============disconnect" << std::endl;
+void Manager::hostDisconnectNotification() {
+	std::cerr << "============== Host Disconnect" << std::endl;
 	stopEps(ALL_ENDPOINTS_EXCEPT_EP0);
+}
+
+//------------------------------------------------------------------------------
+/// \brief  called by relayReader to notify manager of device disconnect
+///
+//------------------------------------------------------------------------------
+void  Manager::deviceDisconnectNotification() {
+	std::cerr << "============== Device Disconnect" << std::endl;
+	status = USBM_RESET;
 }
 
 //------------------------------------------------------------------------------
@@ -673,12 +704,17 @@ void Manager::setConfig(__u8 index) {
 	start_data_relaying();
 }
 
+
+
 /* Delete all injectors and filters - easier to manage */
 void Manager::cleanup() {
-	while(injectorCount)
-		remove_injector(injectorCount-1, true);
-	while(filterCount)
+	while(injectorCount) {
+		// do not delete memory if also a filter
+		remove_injector(injectorCount-1, !(injectors[injectorCount-1]->plugin_type & PLUGIN_FILTER) );
+	}
+	while(filterCount) {
 		remove_filter(filterCount-1, true);
+	}
 	delete deviceProxy;
 	deviceProxy = NULL;
 	delete hostProxy;

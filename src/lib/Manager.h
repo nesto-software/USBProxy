@@ -105,6 +105,7 @@ public:
 	void cleanup();
 	void hostDisconnectNotification();
 	void hostConnectNotification();
+	void deviceDisconnectNotification();
 	void setDeviceProxyNice(unsigned nice);
 };
 
