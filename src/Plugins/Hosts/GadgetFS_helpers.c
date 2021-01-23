@@ -203,7 +203,7 @@ const char * find_gadget_filename()
 		"sh_udc",
 		"sw_usb_udc",
 		"usb20_otg",
-		"fe980000.usb"
+		"fe980000.usb",
 		NULL
 	};
 
