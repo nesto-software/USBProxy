@@ -192,6 +192,7 @@ extern "C" int main(int argc, char **argv)
 
 	int status;
 	do {
+		printf("This is the Nesto Fork: Make USBProxy Great Again!");
 		manager=new Manager(debug);
 		manager->load_plugins(cfg);
 		cfg->print_config();

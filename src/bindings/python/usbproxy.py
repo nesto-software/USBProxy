@@ -1,7 +1,7 @@
 
 import time
 from ctypes import *
-lib = cdll.LoadLibrary("libUSBProxyAPI.so")
+lib = cdll.LoadLibrary("libUSBProxyAPI.so.0")
 
 def set_config():
 	# Put in some dummy config so that it works for now
