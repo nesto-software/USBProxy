@@ -1,6 +1,7 @@
 #include "HexString.h"
 #include "PacketFilter_ZeroMQ.h"
 #include <zmq.hpp>
+#include <msgpack.hpp>
 
 PacketFilter_ZeroMQ::PacketFilter_ZeroMQ(ConfigParser *cfg) {
     ctx = new zmq::context_t();
@@ -19,9 +20,15 @@ void PacketFilter_ZeroMQ::filter_packet(Packet* packet) {
 		char* hex=hex_string((void*)packet->data,packet->wLength);
 		printf("%02x[%d]: %s\n",packet->bEndpoint,packet->wLength,hex);
 
-
 		const std::string m = std::string(hex);
-		(*sock).send(zmq::buffer(m), zmq::send_flags::dontwait); 
+		std::vector<__u8> payload(packet->data, packet->data + packet->wLength);
+
+		std::stringstream buffer;
+		msgpack::pack(buffer, payload);
+		buffer.seekg(0);
+		std::string str(buffer.str());
+
+		(*sock).send(zmq::buffer(str), zmq::send_flags::dontwait); 
 
 		free(hex);
 	}
