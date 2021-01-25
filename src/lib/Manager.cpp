@@ -498,6 +498,8 @@ void Manager::stop_relaying(){
 		fprintf(stderr, "STAGE 1: %d\n", i);
 
 		if (in_endpoints[i]) {in_endpoints[i]=NULL;}
+		fprintf(stderr, "in_readers length: %d\n", in_readers[i]);
+
 		if (in_readers[i]) {
 			fprintf(stderr, "JOINABLE?: %d\n", in_readerThreads[i].joinable());
 

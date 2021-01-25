@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <zmq.hpp>
 
 #include "Plugins.h"
 #include "Device.h"
@@ -42,7 +43,7 @@ public:
 	}
 	virtual ~PacketFilter() {};
 
-	virtual void filter_packet(Packet* packet) {}
+	virtual void filter_packet(Packet* packet, zmq::socket_t *sock) {}
 	virtual void filter_setup_packet(SetupPacket* packet,bool direction_out) {}
 
 	bool test_packet(const Packet* packet);

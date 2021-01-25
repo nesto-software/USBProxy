@@ -5,7 +5,7 @@
 set(TOOL usb-mitm)
 
 include_directories(${libusbproxy_SOURCE_DIR})
-LIST(APPEND TOOLS_LINK_LIBS USBProxy -lzmq)
+LIST(APPEND TOOLS_LINK_LIBS USBProxy -lzmq -pthread)
 
 add_executable(${TOOL} ${TOOL}.cpp)
 set_source_files_properties(${TOOL}.cpp PROPERTIES COMPILE_FLAGS  "-std=c++11 -pthread -Wall -I.")

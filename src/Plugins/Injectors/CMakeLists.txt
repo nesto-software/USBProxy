@@ -8,7 +8,7 @@ set(PACKAGE usbproxy_injectors)
 LIST(APPEND PLUGINS Injector_UDP Injector_UDPHID)
 
 include_directories(${libusbproxy_SOURCE_DIR})
-LIST(APPEND PLUGINS_LINK_LIBS USBProxy)
+LIST(APPEND PLUGINS_LINK_LIBS USBProxy -lzmq)
 
 foreach(plugin ${PLUGINS})
 	add_library(${plugin} SHARED ${plugin}.cpp)

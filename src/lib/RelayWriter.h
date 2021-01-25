@@ -9,6 +9,7 @@
 #include <mqueue.h>
 #include <vector>
 #include <atomic>
+#include <zmq.hpp>
 
 class PacketFilter;
 class Proxy;
@@ -33,6 +34,7 @@ private:
 	DeviceProxy* deviceProxy;
 	std::vector<PacketFilter*> filters;
 	Manager* manager;
+	zmq::socket_t *sock;
 
 public:
 	RelayWriter(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& recvQueue);

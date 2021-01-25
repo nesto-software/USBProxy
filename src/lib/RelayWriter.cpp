@@ -6,6 +6,8 @@
 
 #include <unistd.h>
 #include <poll.h>
+#include <zmq.hpp>
+
 #include <stdio.h>
 #include <sched.h>
 #include <string.h>
@@ -25,6 +27,8 @@
 #define TRANSMIT_TIMEOUT_MS 500
 #define READ_TIMEOUT_MS 500
 
+extern zmq::context_t *ctx;
+
 RelayWriter::RelayWriter(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& recvQueue)
 	: _please_stop(false)
 	, _recvQueue(&recvQueue)
@@ -38,6 +42,9 @@ RelayWriter::RelayWriter(Endpoint* _endpoint,Proxy* _proxy, PacketQueue& recvQue
 	proxy=_proxy;
 	deviceProxy=NULL;
 	manager=NULL;
+
+	sock = new zmq::socket_t(*ctx, zmq::socket_type::pub);
+	(*sock).connect("tcp://127.0.0.1:9999");
 }
 
 RelayWriter::RelayWriter(Endpoint* _endpoint,DeviceProxy* _deviceProxy,Manager* _manager, PacketQueue& recvQueue, PacketQueue& sendQueue)
@@ -54,10 +61,15 @@ RelayWriter::RelayWriter(Endpoint* _endpoint,DeviceProxy* _deviceProxy,Manager* 
 	proxy=NULL;
 	deviceProxy=_deviceProxy;
 	manager=_manager;
+
+	sock = new zmq::socket_t(*ctx, zmq::socket_type::pub);
+	(*sock).connect("tcp://127.0.0.1:9999");
 }
 
 RelayWriter::~RelayWriter() {
 	filters.clear();
+	(*sock).close();
+	delete sock;
 }
 
 void RelayWriter::relay_write_setup() {
@@ -136,7 +148,7 @@ void RelayWriter::relay_write() {
 				continue;
 			for(size_t j=0; j<filters.size(); j++) {
 				if (filters[j]->test_packet(p.get())) {
-					filters[j]->filter_packet(p.get());
+					filters[j]->filter_packet(p.get(), sock);
 				}
 			}
 			if (p->transmit) {

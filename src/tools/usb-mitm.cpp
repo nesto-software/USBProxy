@@ -50,6 +50,19 @@ void usage(char *arg) {
 void cleanup(void) {
 }
 
+void run_proxy() {
+	zmq::socket_t *frontend = new zmq::socket_t(*ctx, zmq::socket_type::xsub);
+	(*frontend).bind("tcp://*:9999");
+	zmq::socket_t *backend = new zmq::socket_t(*ctx, zmq::socket_type::xpub);
+	(*backend).bind("tcp://*:5678");
+
+	// proxy until context is destroyed, see: http://api.zeromq.org/3-2:zmq-proxy
+	zmq::proxy(*frontend, *backend);
+
+	delete(frontend);
+	delete(backend);
+}
+
 /*
  * sigterm: stop forwarding threads, and/or hotplug loop and exit
  * sighup: reset forwarding threads, reset device and gadget
@@ -167,6 +180,7 @@ extern "C" int main(int argc, char **argv)
 		case 'n':
 			printf("Using the Nesto-specific ZeroMQ filter...\n");
 			cfg->add_to_vector("Plugins", "PacketFilter_ZeroMQ");
+
 			break;
 		case 'h':
 		default:
@@ -195,6 +209,8 @@ extern "C" int main(int argc, char **argv)
 		if(!host_set)
 			cfg->set("HostProxy", "HostProxy_GadgetFS");
 	}
+
+	std::thread zmq_proxy(run_proxy);
 
 	int status;
 	do {

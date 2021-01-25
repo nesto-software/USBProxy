@@ -21,7 +21,7 @@ set_source_files_properties(${cpp_sources} PROPERTIES COMPILE_FLAGS  "-std=c++11
 
 set_target_properties(USBProxyAPI PROPERTIES VERSION ${MAJOR_VERSION}.${MINOR_VERSION} SOVERSION 0)
 
-target_link_libraries(USBProxyAPI USBProxy)
+target_link_libraries(USBProxyAPI USBProxy -lzmq)
 
 install(TARGETS USBProxyAPI
         LIBRARY DESTINATION lib${LIB_SUFFIX}

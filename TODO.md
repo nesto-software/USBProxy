@@ -4,6 +4,7 @@
 - investigate destructor in zeromq plugin
 - share zeromq socket properly
 - find out why usb-mitm crashes sometimes
+- setup cross-toolchain, see: https://github.com/usb-tools/USBProxy-legacy/wiki
 
 - write proper README:
   - configure rpi OTG port

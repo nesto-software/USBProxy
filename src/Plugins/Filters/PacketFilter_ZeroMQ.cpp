@@ -1,9 +1,8 @@
-#include "HexString.h"
-#include "PacketFilter_ZeroMQ.h"
 #include <zmq.hpp>
 #include <msgpack.hpp>
 
-extern zmq::context_t *ctx;
+#include "HexString.h"
+#include "PacketFilter_ZeroMQ.h"
 
 struct ZMQ_MSG {
 	std::vector<__u8> d;
@@ -11,18 +10,10 @@ struct ZMQ_MSG {
 	MSGPACK_DEFINE_MAP(d, e);
 };
 
-PacketFilter_ZeroMQ::PacketFilter_ZeroMQ(ConfigParser *cfg) {
-    sock = new zmq::socket_t(*ctx, zmq::socket_type::pub);
+PacketFilter_ZeroMQ::PacketFilter_ZeroMQ(ConfigParser *cfg) {}
+PacketFilter_ZeroMQ::~PacketFilter_ZeroMQ() {}
 
-    (*sock).bind("tcp://127.0.0.1:5678");
-}
-
-PacketFilter_ZeroMQ::~PacketFilter_ZeroMQ() {
-	(*sock).close();
-	delete sock;
-}
-
-void PacketFilter_ZeroMQ::filter_packet(Packet* packet) {
+void PacketFilter_ZeroMQ::filter_packet(Packet* packet, zmq::socket_t *sock) {
 	if (packet->wLength<=64) {
 		struct ZMQ_MSG msg;
 		msg.d = std::vector<__u8>(packet->data, packet->data + packet->wLength);
@@ -37,9 +28,7 @@ void PacketFilter_ZeroMQ::filter_packet(Packet* packet) {
 	}
 }
 
-void PacketFilter_ZeroMQ::filter_setup_packet(SetupPacket* packet,bool direction) {
-	// TODO: determine if the setup packet is relevant for us
-}
+void PacketFilter_ZeroMQ::filter_setup_packet(SetupPacket* packet,bool direction) {}
 
 static PacketFilter_ZeroMQ *proxy;
 
