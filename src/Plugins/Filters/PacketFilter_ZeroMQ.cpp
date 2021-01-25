@@ -3,6 +3,8 @@
 #include <zmq.hpp>
 #include <msgpack.hpp>
 
+extern zmq::context_t *ctx;
+
 struct ZMQ_MSG {
 	std::vector<__u8> d;
 	__u8 e;
@@ -10,7 +12,6 @@ struct ZMQ_MSG {
 };
 
 PacketFilter_ZeroMQ::PacketFilter_ZeroMQ(ConfigParser *cfg) {
-    ctx = new zmq::context_t();
     sock = new zmq::socket_t(*ctx, zmq::socket_type::pub);
 
     (*sock).bind("tcp://127.0.0.1:5678");
@@ -18,7 +19,7 @@ PacketFilter_ZeroMQ::PacketFilter_ZeroMQ(ConfigParser *cfg) {
 
 PacketFilter_ZeroMQ::~PacketFilter_ZeroMQ() {
 	(*sock).close();
-	(*ctx).close();
+	delete sock;
 }
 
 void PacketFilter_ZeroMQ::filter_packet(Packet* packet) {

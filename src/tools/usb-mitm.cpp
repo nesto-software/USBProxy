@@ -20,10 +20,12 @@
 #include "Manager.h"
 #include "ConfigParser.h"
 #include "version.h"
+#include <zmq.hpp>
 
 static unsigned debug=0;
 
 Manager* manager;
+zmq::context_t *ctx = new zmq::context_t();
 
 void usage(char *arg) {
 	printf("usb-mitm - command line tool for controlling USBProxy\n");
@@ -208,6 +210,7 @@ extern "C" int main(int argc, char **argv)
 		manager->stop_relaying();
 		manager->cleanup();
 		delete(manager);
+		delete(ctx);
 	} while ( status == USBM_RESET);
 	
 	if (keylog_output_file) {

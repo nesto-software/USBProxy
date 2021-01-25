@@ -526,6 +526,9 @@ void Manager::stop_relaying(){
 		}
 	}
 
+		fprintf(stderr, "JOINED");
+
+
 	if (out_endpoints[0]) {delete(out_endpoints[0]);out_endpoints[0]=NULL;}
 
 	//Release interfaces
