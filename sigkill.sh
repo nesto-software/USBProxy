@@ -1,1 +1,1 @@
-sudo pkill -SIGTERM usb-mitm
+sudo pkill -SIGKILL usb-mitm
