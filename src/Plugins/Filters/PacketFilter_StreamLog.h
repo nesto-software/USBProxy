@@ -13,7 +13,7 @@ private:
 	FILE* file;
 public:
 	PacketFilter_StreamLog(ConfigParser *cfg);
-	void filter_packet(Packet* packet);
+	void filter_packet(Packet* packet, zmq::socket_t *sock);
 	void filter_setup_packet(SetupPacket* packet,bool direction);
 	virtual char* toString() {return (char*)"Stream Log Filter";}
 };

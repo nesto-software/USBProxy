@@ -14,20 +14,18 @@ PacketFilter_ZeroMQ::PacketFilter_ZeroMQ(ConfigParser *cfg) {}
 PacketFilter_ZeroMQ::~PacketFilter_ZeroMQ() {}
 
 void PacketFilter_ZeroMQ::filter_packet(Packet* packet, zmq::socket_t *sock) {
-	if (packet->wLength<=64) {
-		struct ZMQ_MSG msg;
-		msg.d = std::vector<__u8>(packet->data, packet->data + packet->wLength);
-		msg.e = packet->bEndpoint;
+	struct ZMQ_MSG msg;
+	msg.d = std::vector<__u8>(packet->data, packet->data + packet->wLength);
+	msg.e = packet->bEndpoint;
 
-		std::stringstream buffer;
-		msgpack::pack(buffer, msg);
-		buffer.seekg(0);
-		std::string str(buffer.str());
+	std::stringstream buffer;
+	msgpack::pack(buffer, msg);
+	buffer.seekg(0);
+	std::string str(buffer.str());
 
-		(*sock).send(zmq::buffer(str), zmq::send_flags::dontwait); 
+	(*sock).send(zmq::buffer(str), zmq::send_flags::dontwait); 
 
-		// TODO: is there something to clean up / free?
-	}
+	// TODO: is there something to clean up / free?
 }
 
 void PacketFilter_ZeroMQ::filter_setup_packet(SetupPacket* packet,bool direction) {}

@@ -107,7 +107,7 @@ void PacketFilter_PcapLogger::filter_setup_packet(SetupPacket* packet,bool direc
 	pthread_mutex_unlock(&pcap_writer_mutex);
 }
 
-void PacketFilter_PcapLogger::filter_packet(Packet* packet) {
+void PacketFilter_PcapLogger::filter_packet(Packet* packet, zmq::socket_t *sock) {
 	struct pcap_pkthdr ph;
 	struct timeval ts;
 	__u8 *buf, *ptr;

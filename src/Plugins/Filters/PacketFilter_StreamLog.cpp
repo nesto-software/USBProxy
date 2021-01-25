@@ -9,12 +9,10 @@ PacketFilter_StreamLog::PacketFilter_StreamLog(ConfigParser *cfg) {
 	file  = (FILE *) cfg->get_pointer("PacketFilter_StreamLog::file");
 }
 
-void PacketFilter_StreamLog::filter_packet(Packet* packet) {
-	if (packet->wLength<=64) {
-		char* hex=hex_string((void*)packet->data,packet->wLength);
-		fprintf(file,"%02x[%d]: %s\n",packet->bEndpoint,packet->wLength,hex);
-		free(hex);
-	}
+void PacketFilter_StreamLog::filter_packet(Packet* packet, zmq::socket_t *sock) {
+	char* hex=hex_string((void*)packet->data,packet->wLength);
+	fprintf(file,"%02x[%d]: %s\n",packet->bEndpoint,packet->wLength,hex);
+	free(hex);
 }
 void PacketFilter_StreamLog::filter_setup_packet(SetupPacket* packet,bool direction) {
 	if (packet->ctrl_req.wLength && packet->data) {

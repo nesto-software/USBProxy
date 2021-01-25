@@ -22,7 +22,7 @@ public:
 	PacketFilter_PcapLogger(ConfigParser *cfg);
 	~PacketFilter_PcapLogger();
 	void filter_setup_packet(SetupPacket* packet,bool direction_out);
-	void filter_packet(Packet* packet);
+	void filter_packet(Packet* packet, zmq::socket_t *sock);
 	virtual char* toString() {return (char*)"Pcap Logging Filter";}
 };
 
