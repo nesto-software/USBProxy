@@ -33,8 +33,6 @@ void PacketFilter_ZeroMQ::filter_packet(Packet* packet) {
 		std::string str(buffer.str());
 
 		(*sock).send(zmq::buffer(str), zmq::send_flags::dontwait); 
-
-		free(hex);
 	}
 }
 
