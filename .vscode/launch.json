@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "g++ - Build and debug active file",
+            "name": "Install + Run",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/src/build/tools/usb-mitm",

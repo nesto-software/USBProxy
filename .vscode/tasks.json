@@ -8,12 +8,14 @@
         {
             "label": "sigterm",
             "type": "shell",
-            "command": "${workspaceFolder}/sigterm.sh"
+            "command": "${workspaceFolder}/sigterm.sh",
+            "problemMatcher": []
         },
         {
             "label": "sigkill",
             "type": "shell",
-            "command": "${workspaceFolder}/sigkill.sh"
+            "command": "${workspaceFolder}/sigkill.sh",
+            "problemMatcher": []
         }
     ],
     "version": "2.0.0"
