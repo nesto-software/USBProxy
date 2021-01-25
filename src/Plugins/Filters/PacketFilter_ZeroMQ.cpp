@@ -3,15 +3,18 @@
 #include <zmq.hpp>
 
 PacketFilter_ZeroMQ::PacketFilter_ZeroMQ(ConfigParser *cfg) {
-    zmq::context_t ctx;
-    zmq::socket_t sock(ctx, zmq::socket_type::push);
-    sock.bind("inproc://test");
-    const std::string_view m = "Hello, world";
-    sock.send(zmq::buffer(m), zmq::send_flags::dontwait);
+    ctx = new zmq::context_t();
+    sock = new zmq::socket_t(*ctx, zmq::socket_type::push);
+
+    (*sock).bind("tcp://127.0.0.1:5678");
 }
 
 PacketFilter_ZeroMQ::~PacketFilter_ZeroMQ() {
-	// TODO: cleanup
+	// Cease any blocking operations in progress.
+	(*ctx).shutdown();
+
+	// Do a shutdown, if needed and destroy the context.
+	(*ctx).close();
 }
 
 void PacketFilter_ZeroMQ::filter_packet(Packet* packet) {
@@ -20,6 +23,9 @@ void PacketFilter_ZeroMQ::filter_packet(Packet* packet) {
 		printf("%02x[%d]: %s\n",packet->bEndpoint,packet->wLength,hex);
 		free(hex);
 	}
+
+    const std::string m = "Hello, world";
+    (*sock).send(zmq::buffer(m), zmq::send_flags::dontwait); 
 }
 
 void PacketFilter_ZeroMQ::filter_setup_packet(SetupPacket* packet,bool direction) {
