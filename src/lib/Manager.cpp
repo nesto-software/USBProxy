@@ -491,11 +491,18 @@ void Manager::stop_relaying(){
 	injectorThreads.clear();
 
 
+	fprintf(stderr, "STAGE 1\n");
+
 	//wait for all relayer threads to stop, then delete relayer objects
 	for(i=0;i<16;i++) {
+		fprintf(stderr, "STAGE 1: %d\n", i);
+
 		if (in_endpoints[i]) {in_endpoints[i]=NULL;}
 		if (in_readers[i]) {
+			fprintf(stderr, "JOINABLE?: %d\n", in_readerThreads[i].joinable());
+
 			if (in_readerThreads[i].joinable()) {
+				fprintf(stderr, "JOIN READER: %d\n", i);
 				in_readerThreads[i].join();
 			}
 			delete(in_readers[i]);
@@ -526,7 +533,7 @@ void Manager::stop_relaying(){
 		}
 	}
 
-		fprintf(stderr, "JOINED");
+	fprintf(stderr, "STAGE 2\n");
 
 
 	if (out_endpoints[0]) {delete(out_endpoints[0]);out_endpoints[0]=NULL;}

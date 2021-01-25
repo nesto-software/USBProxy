@@ -16,6 +16,23 @@
             "type": "shell",
             "command": "${workspaceFolder}/sigkill.sh",
             "problemMatcher": []
+        },
+        {
+            "label": "all",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "cmake",
+                "install"
+            ]
+        },
+        {
+            "label": "cmake",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceRoot}/src"
+            },
+            "command": "/usr/bin/cmake --build ${workspaceRoot}/src/build --config Debug --target all -- -j 6",
+            "problemMatcher": []
         }
     ],
     "version": "2.0.0"
