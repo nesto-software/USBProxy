@@ -163,7 +163,7 @@ extern "C" int main(int argc, char **argv)
 			cfg->add_to_vector("Plugins", "PacketFilter_UDPHID");
 			break;
 		case 'n':
-			printf("Using the Nesto-specific ZeroMQ filter...");
+			printf("Using the Nesto-specific ZeroMQ filter...\n");
 			cfg->add_to_vector("Plugins", "PacketFilter_ZeroMQ");
 			break;
 		case 'h':
