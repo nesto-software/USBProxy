@@ -93,7 +93,7 @@ extern "C" int main(int argc, char **argv)
 	
 	ConfigParser *cfg = new ConfigParser();
 
-	while ((opt = getopt (argc, argv, "v:p:P:D:H:dsc:C:lmik::w:hx")) != EOF) {
+	while ((opt = getopt (argc, argv, "nv:p:P:D:H:dsc:C:lmik::w:hx")) != EOF) {
 		switch (opt) {
 		case 'v':
 			cfg->set("vendorId", optarg);
@@ -161,6 +161,10 @@ extern "C" int main(int argc, char **argv)
 			cfg->add_to_vector("Plugins", "Injector_UDPHID");
 			cfg->set("Injector_UDP::port", "12345");
 			cfg->add_to_vector("Plugins", "PacketFilter_UDPHID");
+			break;
+		case 'n':
+			printf("Using the Nesto-specific ZeroMQ filter...");
+			cfg->add_to_vector("Plugins", "PacketFilter_ZeroMQ");
 			break;
 		case 'h':
 		default:
