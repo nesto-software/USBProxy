@@ -25,6 +25,8 @@ void PacketFilter_ZeroMQ::filter_packet(Packet* packet, zmq::socket_t *sock) {
 		std::string str(buffer.str());
 
 		(*sock).send(zmq::buffer(str), zmq::send_flags::dontwait); 
+
+		// TODO: is there something to clean up / free?
 	}
 }
 
