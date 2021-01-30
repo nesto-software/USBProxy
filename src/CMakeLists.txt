@@ -3,8 +3,6 @@
 #
 #top level cmake project for USBProxy lib, plugins, and commandline tool
 
-message("Flags: $ENV{CPPFLAGS}")
-
 cmake_minimum_required(VERSION 2.8)
 set(MAJOR_VERSION 0)
 set(MINOR_VERSION 1)
@@ -24,6 +22,7 @@ endif()
 # Comment the following out for releases.
 set(CMAKE_C_FLAGS "$ENV{CFLAGS} -pthread -Wall -lzmq")
 
+message("${CMAKE_CPP_FLAGS} $ENV{CPPFLAGS} -std=gnu++11 -pthread -pedantic -Wall -felide-constructors -fno-exceptions -lzmq")
 set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} $ENV{CPPFLAGS} -std=gnu++11 -pthread -pedantic -Wall -felide-constructors -fno-exceptions -lzmq")
 
 add_subdirectory(lib)
