@@ -3,6 +3,7 @@
 #
 #top level cmake project for USBProxy lib, plugins, and commandline tool
 
+message("${CMAKE_PREFIX_PATH}")
 cmake_minimum_required(VERSION 2.8)
 set(MAJOR_VERSION 0)
 set(MINOR_VERSION 1)
