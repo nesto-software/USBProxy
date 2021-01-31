@@ -149,7 +149,25 @@ RUN git checkout 6b6a05e07cbadd4332bf16d48a09efb997756e4b
 RUN BOOST_ROOT=$STAGING_DIR/usr/local/ CXXFLAGS="-I${STAGING_DIR}/usr/local/include" /tmp/cmake/bin/cmake "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR" .
 RUN DESTDIR=${STAGING_DIR} make install toolset=gcc-arm
 
-# TODO: install libusb v1
+# install libusb dependency: libudev
+#RUN echo 'deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports trusty main universe ' >> /etc/apt/sources.list
+#RUN echo 'deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports trusty-updates main universe' >> /etc/apt/sources.list
+#RUN apt-get update
+# actually we need the :armhf version, but since only the .h file is required, we go with the x86 package
+#RUN apt-get install -y libusb-1.0.0-dev:armhf
+#RUN dpkg -L libusb-1.0.0-dev
+# install libusb v1
+#RUN git clone https://github.com/libusb/libusb.git /tmp/libusb && cd /tmp/libusb && git checkout b51c743e4210756a98f4f60c69a34745e4b27a55
+#WORKDIR /tmp/libusb
+#RUN C=$TOOLCHAIN-gcc CFLAGS="-I/usr/include" ./autogen.sh --host=$TOOLCHAIN
+
+# LIBUSB is such a pain to install - we just download pre-built...
+# see: https://ubuntu.pkgs.org/14.04/ubuntu-main-armhf/libusb-1.0-0-dev_1.0.17-1ubuntu2_armhf.deb.html
+#RUN wget -O /tmp/libusb-1.0-0-dev.deb http://ports.ubuntu.com/pool/main/libu/libusbx/libusb-1.0-0_1.0.17-1ubuntu2_armhf.deb
+#RUN sudo dpkg --add-architecture armhf
+#RUN dpkg --force-all -i /tmp/libusb-1.0-0-dev.deb
+#RUN dpkg --contents /tmp/libusb-1.0-0-dev.deb
+# NOTE: libusb actually resides in sysroot and must be extracted into rootfs at the end of the build...
 
 # checkout git repo for usb proxy project
 WORKDIR /root
@@ -168,6 +186,7 @@ RUN LDFLAGS="-L${STAGING_DIR}/usr/local/lib" \
     #"-DCMAKE_REQUIRED_INCLUDES=$SYSROOT/usr/include" \
     "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" \
     "-DCMAKE_INSTALL_PREFIX=/usr/local" \
+    "-DUSE_LIBUSB1=1" \
     ..
 
 RUN make
