@@ -26,7 +26,6 @@ set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} $ENV{CPPFLAGS} -std=gnu++11 -pthread -pe
 add_subdirectory(lib)
 add_subdirectory(Plugins)
 add_subdirectory(tools)
-add_subdirectory(bindings)
 
 # Create uninstall target
 configure_file(
