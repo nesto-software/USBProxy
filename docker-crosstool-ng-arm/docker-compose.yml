@@ -1,0 +1,8 @@
+version: "3.7"
+services:
+  webapp:
+    build:
+        context: .
+        target: nesto-awslocalproxy-custom-build
+    # uncomment to be able to jump into the container for debugging
+    # command: tail -f /dev/null
