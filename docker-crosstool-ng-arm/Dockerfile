@@ -159,6 +159,7 @@ RUN DESTDIR=${STAGING_DIR} make install toolset=gcc-arm
 # install libusb v1
 RUN git clone https://github.com/libusb/libusb.git /tmp/libusb && cd /tmp/libusb && git checkout b51c743e4210756a98f4f60c69a34745e4b27a55
 WORKDIR /tmp/libusb
+# TODO: install with udev enabled -> we need to build systemd for this to work (see: http://www.linuxfromscratch.org/lfs/view/8.1-systemd/chapter06/systemd.html)
 RUN C=$TOOLCHAIN-gcc CFLAGS="-I/usr/include" ./autogen.sh --host=$TOOLCHAIN --enable-udev=no --enable-shared CFLAGS="--sysroot=/opt/crosstool-ng/x-tools/arm-rpi-linux-gnueabihf/arm-rpi-linux-gnueabihf/sysroot"
 RUN make
 RUN make install DESTDIR=${STAGING_DIR}
@@ -173,7 +174,7 @@ RUN make install DESTDIR=${STAGING_DIR}
 
 # checkout git repo for usb proxy project
 WORKDIR /root
-RUN git clone https://github.com/nesto-software/USBProxy-legacy.git usbproxy
+RUN git clone https://github.com/nesto-software/USBProxy-legacy.git  usbproxy
 RUN cd ./usbproxy && mkdir -p src/build
 
 # build the executable for usb-mitm using the crosstool chain

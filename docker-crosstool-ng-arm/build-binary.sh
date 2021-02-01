@@ -37,7 +37,7 @@ else
 fi
 
 if [ ! -z "$2" ]; then
-    scp -i "$3" ./usb-mitm.tar  pi@169.254.100.1:/home/pi/usb-mitm.tar
+    scp -i "$2" ./usb-mitm.tar  pi@169.254.100.1:/home/pi/usb-mitm.tar
 fi
 
 # TODO: build deb package
