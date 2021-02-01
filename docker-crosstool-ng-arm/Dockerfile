@@ -157,9 +157,11 @@ RUN DESTDIR=${STAGING_DIR} make install toolset=gcc-arm
 #RUN apt-get install -y libusb-1.0.0-dev:armhf
 #RUN dpkg -L libusb-1.0.0-dev
 # install libusb v1
-#RUN git clone https://github.com/libusb/libusb.git /tmp/libusb && cd /tmp/libusb && git checkout b51c743e4210756a98f4f60c69a34745e4b27a55
-#WORKDIR /tmp/libusb
-#RUN C=$TOOLCHAIN-gcc CFLAGS="-I/usr/include" ./autogen.sh --host=$TOOLCHAIN
+RUN git clone https://github.com/libusb/libusb.git /tmp/libusb && cd /tmp/libusb && git checkout b51c743e4210756a98f4f60c69a34745e4b27a55
+WORKDIR /tmp/libusb
+RUN C=$TOOLCHAIN-gcc CFLAGS="-I/usr/include" ./autogen.sh --host=$TOOLCHAIN --enable-udev=no --enable-shared CFLAGS="--sysroot=/opt/crosstool-ng/x-tools/arm-rpi-linux-gnueabihf/arm-rpi-linux-gnueabihf/sysroot"
+RUN make
+RUN make install DESTDIR=${STAGING_DIR}
 
 # LIBUSB is such a pain to install - we just download pre-built...
 # see: https://ubuntu.pkgs.org/14.04/ubuntu-main-armhf/libusb-1.0-0-dev_1.0.17-1ubuntu2_armhf.deb.html
@@ -180,10 +182,11 @@ WORKDIR /root/usbproxy/src/build
 RUN LDFLAGS="-L${STAGING_DIR}/usr/local/lib" \
     CFLAGS="-I${STAGING_DIR}/usr/local/include" \
     CXXFLAGS=$CFLAGS \
+    PKG_CONFIG_PATH=$STAGING_DIR/usr/local/lib/pkgconfig \
     cmake \
-    #"-DCMAKE_PREFIX_PATH=$SYSROOT;$STAGING_DIR" \
-    #"-DCMAKE_INCLUDE_PATH=$SYSROOT/usr/include" \
-    #"-DCMAKE_REQUIRED_INCLUDES=$SYSROOT/usr/include" \
+    # note: following is needed to prefix pkg-config entries
+    "-DCMAKE_PREFIX_PATH=$STAGING_DIR/usr/local" \
+    "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR" \
     "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" \
     "-DCMAKE_INSTALL_PREFIX=/usr/local" \
     "-DUSE_LIBUSB1=1" \
@@ -195,3 +198,5 @@ RUN make
 RUN DESTDIR=${STAGING_DIR} make install
 
 #RUN "$TOOLCHAIN-populate" -f -s "$STAGING_DIR" -d "$ROOT_FS"
+
+WORKDIR /root/usbproxy
