@@ -3,18 +3,18 @@
         {
             "label": "install",
             "type": "shell",
-            "command": "${workspaceFolder}/install.sh"
+            "command": "${workspaceFolder}/scripts/install.sh"
         },
         {
             "label": "sigterm",
             "type": "shell",
-            "command": "${workspaceFolder}/sigterm.sh",
+            "command": "${workspaceFolder}/scripts/sigterm.sh",
             "problemMatcher": []
         },
         {
             "label": "sigkill",
             "type": "shell",
-            "command": "${workspaceFolder}/sigkill.sh",
+            "command": "${workspaceFolder}/scripts/sigkill.sh",
             "problemMatcher": []
         },
         {
