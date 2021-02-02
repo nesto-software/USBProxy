@@ -32,7 +32,7 @@ else
     docker run -d --rm --name "${CONTAINER_NAME}" "${IMAGE_NAME}" sleep 120 || echo "You can ignore that error message if you are running this script multiple times."
     #docker cp "${CONTAINER_NAME}:${BINARY_PATH}" "bin/usb-mitm"
     docker cp "${CONTAINER_NAME}:${STAGING_DIR}" "bin"
-    (cd bin/staging; tar cf ../../usb-mitm.tar .)
+    (cd bin/staging; cp -r ../../../nodejs-client nodejs-client; tar cf ../../usb-mitm.tar .; rm -Rf nodejs-client)
     docker kill "${CONTAINER_NAME}"
 fi
 
