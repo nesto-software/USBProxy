@@ -184,7 +184,7 @@ RUN cd /tmp/libcap-2.47 && make prefix=$STAGING_DIR CROSS_COMPILE=$TOOLCHAIN- BU
 # realpath seems to be a dependency for meson...
 RUN sudo apt-get install -y realpath
 COPY ./config/meson-cross-file.txt cross-file.txt
-RUN ./configure --cross-file cross-file.txt -Dincludedir=$STAGING_DIR/include --prefix=$STAGING_DIR
+RUN ./configure --cross-file cross-file.txt --prefix=$STAGING_DIR
 
 # install libusb dependency: libudev
 #RUN echo 'deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports trusty main universe ' >> /etc/apt/sources.list

@@ -8,12 +8,12 @@ ld = '/opt/crosstool-ng/x-tools/arm-rpi-linux-gnueabihf/bin/arm-rpi-linux-gnueab
 
 [built-in options]
 # Used in unit test '140 get define'
-c_args = ['-DMESON_TEST_ISSUE_1665=1']
+c_args = ['-DMESON_TEST_ISSUE_1665=1', '-I/usr/raspberry-build/staging/include']
 cpp_args = '-DMESON_TEST_ISSUE_1665=1'
 
 [properties]
 sys_root = '/opt/crosstool-ng/x-tools/arm-rpi-linux-gnueabihf/arm-rpi-linux-gnueabihf/sysroot'
-pkg_config_libdir = '/usr/raspberry-build/staging/usr/local/lib/pkgconfig'
+pkgconfiglibdir = '/usr/raspberry-build/staging/lib64/pkgconfig'
 
 has_function_printf = true
 has_function_hfkerhisadf = false
