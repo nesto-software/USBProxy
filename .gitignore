@@ -22,6 +22,11 @@ CMakeCache.txt
 Makefile
 version.h
 version
+**/debian/*.log
+obj-x86_64-linux-gnu
+**/debian/*.substvars
+**/debian/usbproxy*
+**/debian/.debhelper
 
 # nesto-specific
 src/build

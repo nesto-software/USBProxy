@@ -14,13 +14,9 @@ export DH_OPTIONS
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 VERSION := $(shell dpkg-parsechangelog | sed -n 's/^Version: \(.*\)-.*/\1/p')
 %:
-	dh $@ --buildsystem cmake
-
-override_dh_auto_configure:
-	dh_auto_configure -- -DDISABLE_PYTHON=ON -DCMAKE_INSTALL_LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH)
+	dh $@
 
 override_dh_install:
-	dh_install
-	# check all necessary headers are included
-	$(CC) -c debian/header-check.c -Idebian/usbproxy-dev/usr/include -o /dev/null
-
+override_dh_auto_build:
+override_dh_auto_install:
+override_dh_auto_configure:
