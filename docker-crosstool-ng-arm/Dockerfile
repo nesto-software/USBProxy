@@ -149,55 +149,33 @@ RUN git checkout 6b6a05e07cbadd4332bf16d48a09efb997756e4b
 RUN BOOST_ROOT=$STAGING_DIR/usr/local/ CXXFLAGS="-I${STAGING_DIR}/usr/local/include" /tmp/cmake/bin/cmake "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR" .
 RUN DESTDIR=${STAGING_DIR} make install toolset=gcc-arm
 
-# install python3 and meson for systemd installation
-RUN wget https://www.python.org/ftp/python/3.7.5/Python-3.7.5.tgz -O /tmp/python3.tgz && cd /tmp && tar xfz python3.tgz
-WORKDIR /tmp/Python-3.7.5
-# necessary to make python3 install work:
-RUN apt-get install -y zlib1g-dev
-# add ssl support for python:
-RUN apt-get -y install libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
-RUN wget https://www.openssl.org/source/openssl-1.1.0f.tar.gz -O /tmp/openssl.tar.gz && cd /tmp && tar xzvf openssl.tar.gz
-RUN cd /tmp/openssl-1.1.0f && ./config --prefix=/usr/local         \
-         --openssldir=/etc/ssl \
-         --libdir=lib          \
-         shared                \
-         zlib-dynamic && make && make install
-# make _ctypes modules in python work:
-RUN apt-get install -y libffi-dev && ldconfig
-RUN LDFLAGS=-L/usr/local/lib ./configure --enable-optimizations  --with-openssl=/usr/local
-# workaround to link the new openssl shared libs, see: http://ubuntu42.blogspot.com/2018/12/setting-up-pyhon-37-with-ssl-support.html
-RUN cd /usr/lib && ln -s /usr/local/lib/libcrypto.so.1.1 && ln -s /usr/local/lib/libssl.so.1.1
-RUN make install
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
-
-RUN pip3 install meson==0.56.2
-
-# we need to build systemd for libusb to work properly (see: http://www.linuxfromscratch.org/lfs/view/8.1-systemd/chapter06/systemd.html)
-RUN git clone https://github.com/systemd/systemd.git /tmp/systemd && cd /tmp/systemd && git checkout a3c5d7e95ba3cf6557c7b23e900e37c066fba392
-WORKDIR /tmp/systemd
-
-# systemd dependency libcap
-RUN wget https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.47.tar.xz -O /tmp/libcap.tar.gz
-RUN cd /tmp/ && tar -xJf libcap.tar.gz
-RUN cd /tmp/libcap-2.47 && make prefix=$STAGING_DIR CROSS_COMPILE=$TOOLCHAIN- BUILD_CC=gcc && make prefix=$STAGING_DIR install 
-
-# realpath seems to be a dependency for meson...
-RUN sudo apt-get install -y realpath
-COPY ./config/meson-cross-file.txt cross-file.txt
-RUN ./configure --cross-file cross-file.txt --prefix=$STAGING_DIR
-
 # install libusb dependency: libudev
+
+# see: https://ubuntu.pkgs.org/14.04/ubuntu-main-armhf/libudev-dev_204-5ubuntu20_armhf.deb.html
+RUN mkdir /tmp/libudev-dev
+RUN wget http://ports.ubuntu.com/pool/main/s/systemd/libudev-dev_204-5ubuntu20_armhf.deb -O /tmp/libudev-dev.deb
+RUN dpkg -x /tmp/libudev-dev.deb /tmp/libudev-dev
+RUN mkdir -p $STAGING_DIR/usr/include && cp /tmp/libudev-dev/usr/include/libudev.h $STAGING_DIR/usr/include/libudev.h
+RUN mkdir -p $STAGING_DIR/usr/lib/pkgconfig && cp /tmp/libudev-dev/usr/lib/arm-linux-gnueabihf/pkgconfig/libudev.pc $STAGING_DIR/usr/lib/pkgconfig/libudev.pc
+
+# see: https://ubuntu.pkgs.org/14.04/ubuntu-main-armhf/libudev1_204-5ubuntu20_armhf.deb.html
+RUN mkdir /tmp/libudev1
+RUN wget http://ports.ubuntu.com/pool/main/s/systemd/libudev1_229-4ubuntu4_armhf.deb -O /tmp/libudev1.deb
+RUN dpkg -x /tmp/libudev1.deb /tmp/libudev1
+RUN mkdir -p $STAGING_DIR/usr/lib && cp /tmp/libudev1/lib/arm-linux-gnueabihf/libudev.so* $STAGING_DIR/usr/lib
+
 #RUN echo 'deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports trusty main universe ' >> /etc/apt/sources.list
 #RUN echo 'deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports trusty-updates main universe' >> /etc/apt/sources.list
-#RUN apt-get update
-# actually we need the :armhf version, but since only the .h file is required, we go with the x86 package
 #RUN apt-get install -y libusb-1.0.0-dev:armhf
 #RUN dpkg -L libusb-1.0.0-dev
 # install libusb v1
 RUN git clone https://github.com/libusb/libusb.git /tmp/libusb && cd /tmp/libusb && git checkout b51c743e4210756a98f4f60c69a34745e4b27a55
 WORKDIR /tmp/libusb
-RUN C=$TOOLCHAIN-gcc CFLAGS="-I/usr/include" ./autogen.sh --host=$TOOLCHAIN --enable-udev=yes --enable-shared CFLAGS="--sysroot=/opt/crosstool-ng/x-tools/arm-rpi-linux-gnueabihf/arm-rpi-linux-gnueabihf/sysroot"
-RUN make
+# note: we need to create a symlink with the lib name and .so suffix (unversioned) only - otherwise linker won't find it
+RUN ln -s $STAGING_DIR/usr/lib/libudev.so.1 $STAGING_DIR/usr/lib/libudev.so
+RUN NOCONFIGURE=1 ./autogen.sh
+RUN C=$TOOLCHAIN-gcc ./configure --host=$TOOLCHAIN --enable-udev=yes --enable-shared CFLAGS="--sysroot=/opt/crosstool-ng/x-tools/arm-rpi-linux-gnueabihf/arm-rpi-linux-gnueabihf/sysroot -I$STAGING_DIR/usr/include" LDFLAGS="-L$STAGING_DIR/usr/lib"
+RUN LDFLAGS="-L$STAGING_DIR/usr/lib" make
 RUN make install DESTDIR=${STAGING_DIR}
 
 # LIBUSB is such a pain to install - we just download pre-built...
