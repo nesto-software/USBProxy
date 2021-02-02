@@ -188,7 +188,7 @@ RUN make install DESTDIR=${STAGING_DIR}
 
 # checkout git repo for usb proxy project
 WORKDIR /root
-RUN git clone https://github.com/nesto-software/USBProxy-legacy.git  usbproxy
+RUN git clone https://github.com/nesto-software/USBProxy-legacy.git usbproxy
 RUN cd ./usbproxy && mkdir -p src/build
 
 # build the executable for usb-mitm using the crosstool chain
@@ -217,6 +217,6 @@ RUN DESTDIR=${STAGING_DIR} make install
 # build the debian package
 RUN apt-get install -y dh-make
 WORKDIR /root/usbproxy/src
-RUN dpkg-buildpackage -B
+RUN dpkg-buildpackage -B -d
 
 WORKDIR /root/usbproxy
