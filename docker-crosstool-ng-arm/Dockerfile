@@ -53,10 +53,10 @@ ENV TOOLCHAIN arm-rpi-linux-gnueabihf
 WORKDIR /opt/crosstool-ng
 
 # Build ARM toolchain
-ADD config/arm.config .config
+COPY ./docker-crosstool-ng-arm/config/arm.config .config
 
 # apply download server fix from https://github.com/pfalcon/esp-open-sdk/issues/306
-COPY "./fixes/140-mpc.sh" "/opt/crosstool-ng/lib/ct-ng.1.20.0/scripts/build/companion_libs/140-mpc.sh" 
+COPY "./docker-crosstool-ng-arm/fixes/140-mpc.sh" "/opt/crosstool-ng/lib/ct-ng.1.20.0/scripts/build/companion_libs/140-mpc.sh" 
 
 # note: the following is needed because I copy-pasted the crosstool-ng config and updated the crosstool-ng version afterwards
 RUN ct-ng upgradeconfig
@@ -97,7 +97,7 @@ RUN make install
 # install the CMAKE_TOOLCHAIN_FILE for our toolchain
 ENV TOOLCHAIN_FILE /usr/raspberry-build/tmp/raspberry_pi_3_b_plus.cmake.tc
 RUN mkdir -p /usr/raspberry-build/tmp/
-COPY ./config/raspberry_pi_3_b_plus.cmake.tc $TOOLCHAIN_FILE
+COPY ./docker-crosstool-ng-arm/config/raspberry_pi_3_b_plus.cmake.tc $TOOLCHAIN_FILE
 
 # install cppzmq
 RUN git clone https://github.com/zeromq/cppzmq.git /tmp/cppzmq && cd /tmp/cppzmq && git checkout c591113bb7975e1be6fa6b0c758cacfe0411c66e
@@ -188,7 +188,9 @@ RUN make install DESTDIR=${STAGING_DIR}
 
 # checkout git repo for usb proxy project
 WORKDIR /root
-RUN git clone https://github.com/nesto-software/USBProxy-legacy.git usbproxy
+RUN apt-get install -y dh-make
+#RUN git clone https://github.com/nesto-software/USBProxy-legacy.git usbproxy
+COPY ./src ./usbproxy/src
 RUN cd ./usbproxy && mkdir -p src/build
 
 # build the executable for usb-mitm using the crosstool chain
@@ -215,8 +217,8 @@ RUN DESTDIR=${STAGING_DIR} make install
 #RUN "$TOOLCHAIN-populate" -f -s "$STAGING_DIR" -d "$ROOT_FS"
 
 # build the debian package
-RUN apt-get install -y dh-make
 WORKDIR /root/usbproxy/src
-RUN dpkg-buildpackage -B -d
+RUN dpkg-buildpackage -d -aarmhf
 
 WORKDIR /root/usbproxy
+RUN ls
