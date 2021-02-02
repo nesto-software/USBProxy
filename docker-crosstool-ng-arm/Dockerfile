@@ -214,4 +214,9 @@ RUN DESTDIR=${STAGING_DIR} make install
 
 #RUN "$TOOLCHAIN-populate" -f -s "$STAGING_DIR" -d "$ROOT_FS"
 
+# build the debian package
+RUN apt-get install -y dh-make
+WORKDIR /root/usbproxy/src
+RUN dpkg-buildpackage -B
+
 WORKDIR /root/usbproxy
