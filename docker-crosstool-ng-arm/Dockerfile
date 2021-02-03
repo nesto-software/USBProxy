@@ -205,20 +205,19 @@ RUN LDFLAGS="-L${STAGING_DIR}/usr/local/lib" \
     "-DCMAKE_PREFIX_PATH=$STAGING_DIR/usr/local" \
     "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR" \
     "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" \
-    "-DCMAKE_INSTALL_PREFIX=/usr/local" \
+    "-DCMAKE_INSTALL_PREFIX=/usr" \
     "-DUSE_LIBUSB1=1" \
     ..
 
 RUN make
 
 # install the executable and its dependencies properly into rootfs
-RUN DESTDIR=${STAGING_DIR} make install
+RUN DESTDIR=${ROOT_FS} make install
 
 #RUN "$TOOLCHAIN-populate" -f -s "$STAGING_DIR" -d "$ROOT_FS"
 
 # build the debian package
 WORKDIR /root/usbproxy/src
-RUN dpkg-buildpackage -d -aarmhf
+RUN dpkg-buildpackage -d -aarmhf -tarm-rpi-linux-gnueabihf
 
 WORKDIR /root/usbproxy
-RUN ls

@@ -1,2 +1,2 @@
 #!/bin/bash
-LD_LIBRARY_PATH=/usr/local/lib/ ./staging/usr/local/bin/usb-mitm
+LD_LIBRARY_PATH=/usr/local/lib/ ./staging/rootfs/usr/bin/usb-mitm

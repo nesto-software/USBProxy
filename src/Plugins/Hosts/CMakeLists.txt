@@ -8,7 +8,7 @@ set(PACKAGE usbproxy_hosts)
 LIST(APPEND PLUGINS HostProxy_TCP)
 
 include_directories(${libusbproxy_SOURCE_DIR})
-LIST(APPEND PLUGINS_LINK_LIBS USBProxy -lzmq)
+LIST(APPEND PLUGINS_LINK_LIBS USBProxy)
 
 foreach(plugin ${PLUGINS})
 	add_library(${plugin} SHARED ${plugin}.cpp)

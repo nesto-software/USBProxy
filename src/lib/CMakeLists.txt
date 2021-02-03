@@ -68,7 +68,7 @@ set_source_files_properties(${cpp_sources} PROPERTIES COMPILE_FLAGS  "${CMAKE_CP
 set_target_properties(USBProxy PROPERTIES VERSION ${MAJOR_VERSION}.${MINOR_VERSION} SOVERSION 0)
 
 target_link_libraries(USBProxy ${LIBUSBPROXY_LIBS} ${CMAKE_DL_LIBS}
-                               ${CMAKE_THREAD_LIBS_INIT} rt -lzmq)
+                               ${CMAKE_THREAD_LIBS_INIT} rt)
 
 install(TARGETS USBProxy
         LIBRARY DESTINATION lib${LIB_SUFFIX}

@@ -1,22 +1,15 @@
 #!/usr/bin/make -f
-# Originally made with the aid of dh_make, by Craig Small
-# Sample debian/rules that uses debhelper. GNU copyright 1997 by Joey Hess.
-# Some lines taken from debmake, by Cristoph Lameter.
-# Rewritten to use dh, by Balint Reczey
-# Modified for USBProxy by Dominic Spill.
 
-# Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
-
-# This has to be exported to make some magic below work.
-export DH_OPTIONS
-
-DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
-VERSION := $(shell dpkg-parsechangelog | sed -n 's/^Version: \(.*\)-.*/\1/p')
 %:
 	dh $@
 
-override_dh_install:
 override_dh_auto_build:
 override_dh_auto_install:
+	mkdir -p debian/tmp
+	cp -r $(ROOT_FS)/usr debian/tmp/
+	
 override_dh_auto_configure:
+
+# because we skiip this step, we must figure out our shared library dependencies manually and write them into control file
+override_dh_shlibdeps:
+	@echo "Skipping dh_shlibdeps because of cross-compilation"

@@ -26,6 +26,8 @@ static unsigned debug=0;
 
 Manager* manager;
 zmq::context_t *ctx = new zmq::context_t();
+zmq::socket_t *frontend = new zmq::socket_t(*ctx, zmq::socket_type::xsub);
+zmq::socket_t *backend = new zmq::socket_t(*ctx, zmq::socket_type::xpub);
 
 void usage(char *arg) {
 	printf("usb-mitm - command line tool for controlling USBProxy\n");
@@ -50,17 +52,10 @@ void usage(char *arg) {
 void cleanup(void) {
 }
 
-void run_proxy() {
-	zmq::socket_t *frontend = new zmq::socket_t(*ctx, zmq::socket_type::xsub);
-	(*frontend).bind("tcp://127.0.0.1*:9999");
-	zmq::socket_t *backend = new zmq::socket_t(*ctx, zmq::socket_type::xpub);
-	(*backend).bind("tcp://127.0.0.1*:5678");
+void run_proxy(zmq::socket_t *frontend, zmq::socket_t *backend) {
 
 	// proxy until context is destroyed, see: http://api.zeromq.org/3-2:zmq-proxy
 	zmq::proxy(*frontend, *backend);
-
-	delete(frontend);
-	delete(backend);
 }
 
 /*
@@ -210,7 +205,9 @@ extern "C" int main(int argc, char **argv)
 			cfg->set("HostProxy", "HostProxy_GadgetFS");
 	}
 
-	std::thread zmq_proxy(run_proxy);
+	(*frontend).bind("tcp://127.0.0.1:9999");
+	(*backend).bind("tcp://127.0.0.1:5678");
+	std::thread zmq_proxy = std::thread(run_proxy, std::ref(frontend), std::ref(backend));
 
 	int status;
 	do {
@@ -223,8 +220,14 @@ extern "C" int main(int argc, char **argv)
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 
+		frontend->close();
+		backend->close();
+		zmq_proxy.join();
+		ctx->close();
 		manager->stop_relaying();
 		manager->cleanup();
+		delete(frontend);
+		delete(backend);
 		delete(manager);
 		delete(ctx);
 	} while ( status == USBM_RESET);
