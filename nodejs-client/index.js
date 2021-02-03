@@ -10,6 +10,6 @@ const sock = new zmq.Subscriber;
 
     for await (const [msg] of sock) {
         const msg_decoded = msgpack.decode(msg);
-        console.log(msg_decoded.d.toString());
+        console.log(msg_decoded.d);
     }
 })();
