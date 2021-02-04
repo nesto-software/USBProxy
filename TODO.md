@@ -8,7 +8,8 @@
 - investigate destructor in zeromq plugin
 - test usb device hotplugging
 - find out why usb-mitm crashes sometimes on exit
-- setup cross-toolchain, see: https://github.com/usb-tools/USBProxy-legacy/wiki
+- add debian postinst scripts to set up drw2 usb otg if missing
+- integrate aws lambda greengrass sdk for c --> publish as lambda package (different build target)
 
 - write proper README:
   - configure rpi OTG port
