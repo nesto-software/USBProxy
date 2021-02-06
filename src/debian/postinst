@@ -1,9 +1,7 @@
-#! /bin/sh
+#!/bin/sh
 # postinst script for nesto-usbproxy
 #
 # see: dh_installdeb(1)
-
-set -e
 
 # summary of how this script can be called:
 #        * <postinst> 'configure' <most-recently-configured-version>
@@ -14,20 +12,14 @@ set -e
 #          <failed-install-package> <version> 'removing'
 #          <conflicting-package> <version>
 # for details, see /usr/share/doc/packaging-manual/
-#
-# quoting from the policy:
-#     Any necessary prompting should almost always be confined to the
-#     post-installation script, and should be protected with a conditional
-#     so that unnecessary prompting doesn't happen if a package's
-#     installation fails and the 'postinst' is called with 'abort-upgrade',
-#     'abort-remove' or 'abort-deconfigure'.
 
+echo $1
 case "$1" in
     configure)
         cat /boot/config.txt | grep -q dwc2
         rc=$?
 
-        if (( $rc != 0 )); then
+        if [ $rc -ne 0 ]; then
             echo "dtoverlay=dwc2" | sudo tee -a /boot/config.txt
             echo "dwc2" | sudo tee -a /etc/modules
 
