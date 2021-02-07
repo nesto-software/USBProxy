@@ -30,7 +30,7 @@ fi
 
 # use the following to debug the container after successful docker build
 if [ ! -z "$1" ] && [[ ( "$1" == 1 ) ]]; then
-    echo -e "\nCommands to run in another shell:\n---------------------------------\nConnect: docker exec -it crosstool-builder bash\nKill: docker kill crosstool-builder\n"
+    echo -e "\nCommands to run in another shell:\n---------------------------------\nConnect: docker exec -it $CONTAINER_NAME bash\nKill: docker kill $CONTAINER_NAME\n"
     docker run --rm --name "${CONTAINER_NAME}" "${IMAGE_NAME}" tail -f /dev/null; exit
 else
     docker run -d --rm --name "${CONTAINER_NAME}" "${IMAGE_NAME}" sleep 120 || echo "You can ignore that error message if you are running this script multiple times."
