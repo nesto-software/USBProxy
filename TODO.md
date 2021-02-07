@@ -15,3 +15,5 @@
   - configure rpi OTG port
   - install stuff: see install-* scripts
   - use vscode builtins: build button, Install + Run, sigterm/sigkill
+
+IMPORTANT: merge changes from https://github.com/mweal-ed/USBProxy/commits/master
