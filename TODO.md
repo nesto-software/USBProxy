@@ -16,4 +16,7 @@
   - install stuff: see install-* scripts
   - use vscode builtins: build button, Install + Run, sigterm/sigkill
 
-IMPORTANT: merge changes from https://github.com/mweal-ed/USBProxy/commits/master
+IMPORTANT: merge changes from... (seee: https://techgaun.github.io/active-forks/index.html#usb-tools/USBProxy-legacy)
+- https://github.com/mweal-ed/USBProxy/commits/master
+- https://github.com/foxmiti/USBProxy-legacy/commit/fe91833ea886a7a3dd38a6f647fc8e172427950d
+- https://github.com/retrospy/USBProxy ???
