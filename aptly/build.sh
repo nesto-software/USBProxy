@@ -31,7 +31,7 @@ fi
 # run the following on the S3 to install the package:
 # apt-get install apt-transport-s3
 # echo -e "AccessKeyId = 'xxxxx'\nSecretAccessKey = 'yyyy+Ex8VQSUEb'\nRegion = 'eu-central-1'\nToken = ''" > /etc/apt/s3auth.conf
-# echo "deb s3://nesto-debian-repo-devel unofficial local" > /etc/apt/sources.list
+# echo "deb s3://nesto-debian-repo-devel unofficial local" >> /etc/apt/sources.list
 # gpg --keyserver keys.openpgp.org --receive-key 92F91ABA4816493E
 # gpg --export --armor "92F91ABA4816493E" | apt-key add -
 # apt-get update
