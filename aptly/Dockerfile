@@ -11,11 +11,11 @@ apt-get install aptly=1.4.0 ca-certificates=20200601~deb9u1 -y && \
 apt-get clean
 
 ADD ./aptly/aptly.conf /etc/aptly.conf
-ADD ./docker-crosstool-ng-arm/bin/nesto-usbproxy_0.0.1_armhf.deb /root/usb-proxy/
+ADD ./docker-crosstool-ng-arm/bin/usbproxy/*.deb /root/usb-proxy/
 
 ENV APTLY_REPO nesto-pos-adapter-devel
 RUN aptly repo create $APTLY_REPO
-RUN aptly repo add $APTLY_REPO /root/usb-proxy/nesto-usbproxy_0.0.1_armhf.deb
+RUN aptly repo add $APTLY_REPO /root/usb-proxy/nesto-usbproxy_*_armhf.deb
 
 ADD ./aptly/private.asc /root/usb-proxy/private.asc
 ADD ./aptly/public.asc /root/usb-proxy/public.asc

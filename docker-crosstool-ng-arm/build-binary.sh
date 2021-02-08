@@ -36,7 +36,7 @@ else
     docker run -d --rm --name "${CONTAINER_NAME}" "${IMAGE_NAME}" sleep 120 || echo "You can ignore that error message if you are running this script multiple times."
     #docker cp "${CONTAINER_NAME}:${BINARY_PATH}" "bin/usb-mitm"
     #docker cp "${CONTAINER_NAME}:${ROOTFS_DIR}" "bin"
-    docker cp "${CONTAINER_NAME}:/root/usbproxy/nesto-usbproxy_0.0.1_armhf.deb" "bin"
+    docker cp "${CONTAINER_NAME}:/root/usbproxy/" "bin/"
     (cd bin; cp -r ../../nodejs-client nodejs-clients; tar cf ../usb-mitm.tar .;)
     docker kill "${CONTAINER_NAME}"
 fi
