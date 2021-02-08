@@ -6,7 +6,7 @@ if [ -z "$1" ]; then
 fi
 
 if [ -z "$2" ]; then
-    echo "Pass nSecretAccessKey as second parameter."
+    echo "Pass SecretAccessKey as second parameter."
     exit 1
 fi
 
