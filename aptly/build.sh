@@ -26,13 +26,3 @@ fi
 
 # in order to publish to S3, please run "./build.sh 1" and then paste:
 # aptly publish repo -batch=true -passphrase-file="/root/usb-proxy/key_passwd" -gpg-key="92F91ABA4816493E" -component=local -distribution=unofficial nesto-pos-adapter-devel s3:nesto-debian-repo-devel:
-
-
-# run the following on the S3 to install the package:
-# apt-get install apt-transport-s3
-# echo -e "AccessKeyId = 'xxxxx'\nSecretAccessKey = 'yyyy+Ex8VQSUEb'\nRegion = 'eu-central-1'\nToken = ''" > /etc/apt/s3auth.conf
-# echo "deb s3://nesto-debian-repo-devel unofficial local" >> /etc/apt/sources.list
-# gpg --keyserver keys.openpgp.org --receive-key 92F91ABA4816493E
-# gpg --export --armor "92F91ABA4816493E" | apt-key add -
-# apt-get update
-# apt-get install nesto-usbproxy
