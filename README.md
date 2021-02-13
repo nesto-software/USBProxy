@@ -15,8 +15,7 @@ Install
 In order to install USBProxy on your Raspberry Pi, please use the following snippet.
 You must add AWS credentials at the top of the file in advance.
 
-bash
-```
+```bash
 #!/bin/bash
 
 # set AWS credentials to access S3 bucket which hosts the debian repository
