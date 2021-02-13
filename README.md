@@ -1,6 +1,12 @@
-USB Proxy for Raspberry Pi OS (armhf)
-![.github/workflows/build-app-nightly.yaml](https://github.com/nesto-software/USBProxy/workflows/.github/workflows/build-app-nightly.yaml/badge.svg?branch=dev)
+USB Proxy for Raspberry Pi (armhf)   
 ========
+
+<p align="center">
+  <img src=".github/imgs/project_logo.png">
+</p>
+
+![.github/workflows/build-app-nightly.yaml](https://github.com/nesto-software/USBProxy/workflows/.github/workflows/build-app-nightly.yaml/badge.svg?branch=dev)
+
 
 Status
 ------
