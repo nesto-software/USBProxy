@@ -83,21 +83,26 @@ jobs:
         name: debian-package
 
     - name: Add package to aptly
+      env:
+        APTLY_REPO: nesto-pos-adapter-devel
       run: |
         aptly repo add $APTLY_REPO nesto-usbproxy_*_armhf.deb
 
-    - name: Prepare GPG private key
-      run: |
-        echo $GPG_PRIVATE_KEY > ./key.asc
-
     - name: Prepare GPG private key password
+      env:
+        GPG_PRIVATE_KEY_PASSWD: ${{ secrets.GPG_PRIVATE_KEY_PASSWD }}
       run: |
         echo $GPG_PRIVATE_KEY_PASSWD > ./key_passwd
 
-    - name: Import private key into gpg keychain
-      run: |
-        gpg --batch --import ./key.asc
+    - name: Import GPG key
+      id: import_gpg
+      uses: crazy-max/ghaction-import-gpg@v3
+      with:
+        gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+        passphrase: ${{ secrets.GPG_PRIVATE_KEY_PASSWD }}
 
     - name: Sign and upload to S3 
+      env:
+        GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
       run: |
         aptly publish repo -batch=true -passphrase-file="./key_passwd" -gpg-key="$GPG_KEY_ID" -component=local -distribution=nightly nesto-pos-adapter-devel s3:nesto-debian-repo-devel:
