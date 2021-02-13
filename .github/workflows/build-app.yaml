@@ -8,6 +8,7 @@ env:
   STAGING_DIR: /usr/raspberry-build/staging
   SYSROOT: /opt/crosstool-ng/x-tools/arm-rpi-linux-gnueabihf/arm-rpi-linux-gnueabihf/sysroot
   ROOT_FS: /usr/raspberry-build/rootfs
+  PKG_VERSION: 0.0.2
 
 jobs:
   build-and-package:
@@ -58,6 +59,11 @@ jobs:
       working-directory: usbproxy/src
       run: |
         dpkg-buildpackage -d -aarmhf -tarm-rpi-linux-gnueabihf
+
+    - name: Change the package version to reflect an nightly build
+      working-directory: usbproxy/src
+      run: |
+        dch -v ${PKG_VERSION}~$(date +%s)-${GITHUB_SHA}-${GITHUB_RUN_NUMBER} --distribution nightly "$(git log -1 --pretty=%B)" --force-distribution
 
     - name: Archive production artifacts
       uses: actions/upload-artifact@v2
