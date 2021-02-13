@@ -63,6 +63,7 @@ jobs:
     - name: Change the package version to reflect an nightly build
       working-directory: usbproxy/src
       run: |
+        apt-get install -y devscripts
         dch -v ${PKG_VERSION}~$(date +%s)-${GITHUB_SHA}-${GITHUB_RUN_NUMBER} --distribution nightly "$(git log -1 --pretty=%B)" --force-distribution
 
     - name: Archive production artifacts
