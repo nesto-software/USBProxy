@@ -10,8 +10,8 @@ env:
   ROOT_FS: /usr/raspberry-build/rootfs
 
 jobs:
-  build-app:
-    name: Build usbproxy debian package
+  build-and-package:
+    name: Build nesto-usbproxy debian package
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/${{ github.repository_owner }}/nesto-usbproxy-deps:latest
@@ -65,3 +65,39 @@ jobs:
         name: debian-package
         path: |
           usbproxy/*.deb
+
+  upload-package:
+    name: Upload nesto-usbproxy debian package into nesto repository in S3
+    runs-on: ubuntu-latest
+    needs: build-and-package
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/aptly:latest
+      credentials:
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.CR_PAT }}
+
+    steps:
+    - name: Download debian package from artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: debian-package
+
+    - name: Add package to aptly
+      run: |
+        aptly repo add $APTLY_REPO nesto-usbproxy_*_armhf.deb
+
+    - name: Prepare GPG private key
+      run: |
+        echo $GPG_PRIVATE_KEY > ./key.asc
+
+    - name: Prepare GPG private key password
+      run: |
+        echo $GPG_PRIVATE_KEY_PASSWD > ./key_passwd
+
+    - name: Import private key into gpg keychain
+      run: |
+        gpg --batch --import ./key.asc
+
+    - name: Sign and upload to S3 
+      run: |
+        aptly publish repo -batch=true -passphrase-file="./key_passwd" -gpg-key="$GPG_KEY_ID" -component=local -distribution=nightly nesto-pos-adapter-devel s3:nesto-debian-repo-devel:
