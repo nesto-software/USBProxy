@@ -57,8 +57,8 @@ jobs:
         dpkg-buildpackage -d -aarmhf -tarm-rpi-linux-gnueabihf
 
     - name: Archive production artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: debian-package
-          path: |
-            *.deb
+      uses: actions/upload-artifact@v2
+      with:
+        name: debian-package
+        path: |
+          *.deb
