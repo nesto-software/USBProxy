@@ -5,7 +5,7 @@ on:
 #    branches: master
 
 jobs:
-  build-toolchain:
+  build-app:
     name: Build usbproxy Docker Image
     runs-on: ubuntu-latest
     steps:

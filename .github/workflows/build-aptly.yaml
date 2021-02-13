@@ -1,12 +1,12 @@
 on:
   push:
     paths:
-      - 'docker-crosstool-ng-arm/docker/deps.Dockerfile'
+      - 'aptly/Dockerfile'
 #    branches: master
 
 jobs:
-  build-deps:
-    name: Build usbproxy-deps Docker Image
+  build-aptly:
+    name: Build Aptly Image
     runs-on: ubuntu-latest
     steps:
       -
@@ -35,5 +35,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/nesto-usbproxy-deps:latest
-          file: docker-crosstool-ng-arm/docker/deps.Dockerfile
+          tags: ghcr.io/${{ github.repository_owner }}/aptly:latest
+          file: aptly/Dockerfile
+          target: aptly_base
