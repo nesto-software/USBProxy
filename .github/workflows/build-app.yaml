@@ -32,7 +32,6 @@ jobs:
         CXXFLAGS=$CFLAGS \
         PKG_CONFIG_PATH=$STAGING_DIR/usr/local/lib/pkgconfig \
         cmake \
-        # note: following is needed to prefix pkg-config entries
         "-DCMAKE_PREFIX_PATH=$STAGING_DIR/usr/local" \
         "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR" \
         "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" \
