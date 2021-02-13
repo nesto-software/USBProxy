@@ -28,6 +28,8 @@ GPG_KEY_ID=92F91ABA4816493E
 PKG_NAME=nesto-usbproxy
 DISTRIBUTION=main   # main or nightly
 
+set -e
+
 sudo apt-get update
 sudo apt-get install apt-transport-s3
 echo -e "AccessKeyId = '$ACCESS_KEY_ID'\nSecretAccessKey = '$SECRET_ACCESS_KEY'\nRegion = '$REGION'\nToken = ''" > /etc/apt/s3auth.conf
@@ -38,6 +40,6 @@ sudo apt-get update
 sudo apt-get install $PKG_NAME
 ```
 
-Signature
+GPG
 ---------
-<a href="https://keyoxide.org/F1C6636C27019FD0D29307DEAE25CBF30C0DDB0C" rel="Nesto Cloud Operations">![Nesto Cloud Operations](.github/gpg_qr.svg)</a>
+<a href="https://keyoxide.org/F1C6636C27019FD0D29307DEAE25CBF30C0DDB0C" rel="Nesto Cloud Operations">![Nesto Cloud Operations](.github/imgs/gpg_qr.svg)</a>
