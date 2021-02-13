@@ -1,3 +1,6 @@
+# THIS FILE IS DEPRECATED!
+# IT WAS SPLIT AND MOVED TO THE ./docker DIR!
+
 FROM ubuntu:14.04.2 as crosstool-ng_install
 
 # from: https://github.com/amclain/docker-crosstool-ng/blob/master/Dockerfile
