@@ -115,4 +115,4 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: |
-        aptly publish repo -batch=true -passphrase-file="./key_passwd" -gpg-key="$GPG_KEY_ID" -component=local -distribution=nightly nesto-pos-adapter-devel s3:nesto-debian-repo-devel:
+        aptly publish repo -batch=true -passphrase-file="./key_passwd" -gpg-key="$GPG_KEY_ID" -component=aws -distribution=nightly nesto-pos-adapter-devel s3:nesto-debian-repo-devel:
