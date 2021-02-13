@@ -63,7 +63,7 @@ COPY "./docker-crosstool-ng-arm/fixes/140-mpc.sh" "/opt/crosstool-ng/lib/ct-ng.1
 RUN ct-ng upgradeconfig
 
 # see: https://github.com/crosstool-ng/crosstool-ng/issues/1454#issuecomment-774962457
-RUN ct-ng source
+RUN ct-ng source CT_ALLOW_BUILD_AS_ROOT_SURE=true
 
 # build the toolchain
 RUN ct-ng build CT_ALLOW_BUILD_AS_ROOT_SURE=true
