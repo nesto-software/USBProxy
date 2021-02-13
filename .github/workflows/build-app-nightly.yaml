@@ -2,7 +2,8 @@ on:
   push:
     paths:
       - 'src/**'
-#    branches: master
+      - '.github/workflows/build-**'
+    branches: dev
 
 env:
   STAGING_DIR: /usr/raspberry-build/staging

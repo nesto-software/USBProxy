@@ -2,7 +2,7 @@ on:
   push:
     paths:
       - 'docker-crosstool-ng-arm/docker/toolchain.Dockerfile'
-#    branches: master
+    branches: master
 
 jobs:
   build-toolchain:
