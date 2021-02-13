@@ -18,39 +18,40 @@ jobs:
       credentials:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.CR_PAT }}
-     steps:
-      - name: Create build directory
-        run: |
-          mkdir -p src/build
 
-      - name: Create Makefiles using CMake
-        working-directory: src/build
-        run: |
-          LDFLAGS="-L${STAGING_DIR}/usr/local/lib" \
-          CFLAGS="-I${STAGING_DIR}/usr/local/include" \
-          CXXFLAGS=$CFLAGS \
-          PKG_CONFIG_PATH=$STAGING_DIR/usr/local/lib/pkgconfig \
-          cmake \
-          # note: following is needed to prefix pkg-config entries
-          "-DCMAKE_PREFIX_PATH=$STAGING_DIR/usr/local" \
-          "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR" \
-          "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" \
-          "-DCMAKE_INSTALL_PREFIX=/usr" \
-          "-DCMAKE_BUILD_TYPE=Release" \
-          "-DUSE_LIBUSB1=1" \
-          ..
+    steps:
+    - name: Create build directory
+      run: |
+        mkdir -p src/build
 
-      - name: Run make
-        working-directory: src/build
-        run: |
-          make
+    - name: Create Makefiles using CMake
+      working-directory: src/build
+      run: |
+        LDFLAGS="-L${STAGING_DIR}/usr/local/lib" \
+        CFLAGS="-I${STAGING_DIR}/usr/local/include" \
+        CXXFLAGS=$CFLAGS \
+        PKG_CONFIG_PATH=$STAGING_DIR/usr/local/lib/pkgconfig \
+        cmake \
+        # note: following is needed to prefix pkg-config entries
+        "-DCMAKE_PREFIX_PATH=$STAGING_DIR/usr/local" \
+        "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR" \
+        "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" \
+        "-DCMAKE_INSTALL_PREFIX=/usr" \
+        "-DCMAKE_BUILD_TYPE=Release" \
+        "-DUSE_LIBUSB1=1" \
+        ..
 
-      - name: Run make install
-        working-directory: src/build
-        run: |
-          DESTDIR=${ROOT_FS} make install
+    - name: Run make
+      working-directory: src/build
+      run: |
+        make
 
-      - name: Build the debian package
-        working-directory: src
-        run: |
-          dpkg-buildpackage -d -aarmhf -tarm-rpi-linux-gnueabihf
+    - name: Run make install
+      working-directory: src/build
+      run: |
+        DESTDIR=${ROOT_FS} make install
+
+    - name: Build the debian package
+      working-directory: src
+      run: |
+        dpkg-buildpackage -d -aarmhf -tarm-rpi-linux-gnueabihf
