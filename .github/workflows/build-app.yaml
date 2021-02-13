@@ -20,9 +20,13 @@ jobs:
         password: ${{ secrets.CR_PAT }}
 
     steps:
+    - uses: actions/checkout@v2
+      with:
+        path: 'usbproxy'
+
     - name: Create build directory
       run: |
-        mkdir -p src/build
+        mkdir -p usbproxy/src/build
 
     - name: Create Makefiles using CMake
       working-directory: src/build
@@ -41,17 +45,17 @@ jobs:
         ..
 
     - name: Run make
-      working-directory: src/build
+      working-directory: usbproxy/src/build
       run: |
         make
 
     - name: Run make install
-      working-directory: src/build
+      working-directory: usbproxy/src/build
       run: |
         DESTDIR=${ROOT_FS} make install
 
     - name: Build the debian package
-      working-directory: src
+      working-directory: usbproxy/src
       run: |
         dpkg-buildpackage -d -aarmhf -tarm-rpi-linux-gnueabihf
 
@@ -60,4 +64,4 @@ jobs:
       with:
         name: debian-package
         path: |
-          *.deb
+          usbproxy/*.deb
