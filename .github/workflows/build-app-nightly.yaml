@@ -68,10 +68,10 @@ jobs:
         DESTDIR=${ROOT_FS} make install
 
     # TODO: move the devscripts installation into docker container image build
-    - name: Change the package version to reflect an nightly build
+    - name: Change the package version to reflect a nightly build
       working-directory: usbproxy/src
       run: |
-        VERSION=$(cat ./VERSION)
+        VERSION=$(cat ./usbproxy/VERSION)
         NEW_VERSION=$(semver bump patch $VERSION)
         apt-get install -y devscripts
         dch -v ${NEW_VERSION}~$(date +%s)-${GITHUB_SHA}-${GITHUB_RUN_NUMBER} --distribution nightly "$(git log -1 --pretty=%B)" --force-distribution
