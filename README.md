@@ -26,11 +26,12 @@ REGION=eu-central-1
 BUCKET=nesto-debian-repo-devel
 GPG_KEY_ID=92F91ABA4816493E
 PKG_NAME=nesto-usbproxy
+DISTRIBUTION=main   # main or nightly
 
 sudo apt-get update
 sudo apt-get install apt-transport-s3
 echo -e "AccessKeyId = '$ACCESS_KEY_ID'\nSecretAccessKey = '$SECRET_ACCESS_KEY'\nRegion = '$REGION'\nToken = ''" > /etc/apt/s3auth.conf
-echo "deb s3://$BUCKET unofficial local" >> /etc/apt/sources.list
+echo "deb s3://$BUCKET $DISTRIBUTION aws" >> /etc/apt/sources.list
 gpg --keyserver keys.openpgp.org --receive-key "$GPG_KEY_ID"
 gpg --export --armor "$GPG_KEY_ID" | apt-key add -
 sudo apt-get update
