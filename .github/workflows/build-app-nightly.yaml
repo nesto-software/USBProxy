@@ -11,7 +11,6 @@ env:
   STAGING_DIR: /usr/raspberry-build/staging
   SYSROOT: /opt/crosstool-ng/x-tools/arm-rpi-linux-gnueabihf/arm-rpi-linux-gnueabihf/sysroot
   ROOT_FS: /usr/raspberry-build/rootfs
-  PKG_VERSION: 0.0.2
 
 jobs:
   build-and-package:
@@ -28,6 +27,15 @@ jobs:
       with:
         path: 'usbproxy'
         ref: 'dev'
+
+    - uses: actions/checkout@v2
+      with:
+        repository: fsaintjacques/semver-tool
+        path: semver
+
+    - name: Build semver utility
+      run: |
+        cd semver && make install
 
     - name: Create build directory
       run: |
@@ -63,8 +71,10 @@ jobs:
     - name: Change the package version to reflect an nightly build
       working-directory: usbproxy/src
       run: |
+        VERSION=$(cat ./VERSION)
+        NEW_VERSION=$(semver bump patch $VERSION)
         apt-get install -y devscripts
-        dch -v ${PKG_VERSION}~$(date +%s)-${GITHUB_SHA}-${GITHUB_RUN_NUMBER} --distribution nightly "$(git log -1 --pretty=%B)" --force-distribution
+        dch -v ${NEW_VERSION}~$(date +%s)-${GITHUB_SHA}-${GITHUB_RUN_NUMBER} --distribution nightly "$(git log -1 --pretty=%B)" --force-distribution
 
     - name: Build the debian package
       working-directory: usbproxy/src

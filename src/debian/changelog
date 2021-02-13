@@ -1,10 +1,10 @@
-nesto-usbproxy (0.0.2~001) unstable; urgency=medium
+nesto-usbproxy (0.0.2) main; urgency=medium
 
   * Test the versioning and publishing of further images
 
  -- Martin Löper <martin@spectre.fritz.box>  Mon, 08 Feb 2021 04:57:18 +0100
 
-nesto-usbproxy (0.0.1) unstable; urgency=low
+nesto-usbproxy (0.0.1) main; urgency=low
 
   * Initial release
 
