@@ -1,39 +1,56 @@
 on:
   push:
     paths:
-      - 'docker-crosstool-ng-arm/docker/app.Dockerfile'
+      - 'src'
 #    branches: master
+
+env:
+  ENV STAGING_DIR: /usr/raspberry-build/staging
+  ENV SYSROOT: /opt/crosstool-ng/x-tools/arm-rpi-linux-gnueabihf/arm-rpi-linux-gnueabihf/sysroot
+  ENV ROOT_FS: /usr/raspberry-build/rootfs
 
 jobs:
   build-app:
-    name: Build usbproxy Docker Image
+    name: Build usbproxy debian package
     runs-on: ubuntu-latest
-    steps:
-      -
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/nesto-usbproxy-deps:latest
+      credentials:
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.CR_PAT }}
+     steps:
+      - name: Create build directory
+        run: |
+          mkdir -p src/build
 
-      - 
-        name: Login to Registry
-        uses: docker/login-action@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.CR_PAT }}
+      - name: Create Makefiles using CMake
+        working-directory: src/build
+        run: |
+          LDFLAGS="-L${STAGING_DIR}/usr/local/lib" \
+          CFLAGS="-I${STAGING_DIR}/usr/local/include" \
+          CXXFLAGS=$CFLAGS \
+          PKG_CONFIG_PATH=$STAGING_DIR/usr/local/lib/pkgconfig \
+          cmake \
+          # note: following is needed to prefix pkg-config entries
+          "-DCMAKE_PREFIX_PATH=$STAGING_DIR/usr/local" \
+          "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR" \
+          "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" \
+          "-DCMAKE_INSTALL_PREFIX=/usr" \
+          "-DCMAKE_BUILD_TYPE=Release" \
+          "-DUSE_LIBUSB1=1" \
+          ..
 
-      - 
-        name: Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: ${{ runner.os }}-buildx-
-        
-      -
-        name: Build and push
-        id: docker_build
-        uses: docker/build-push-action@v2
-        with:
-          push: false
-          tags: ghcr.io/${{ github.repository_owner }}/nesto-usbproxy:latest
-          file: docker-crosstool-ng-arm/docker/app.Dockerfile
+      - name: Run make
+        working-directory: src/build
+        run: |
+          make
+
+      - name: Run make install
+        working-directory: src/build
+        run: |
+          DESTDIR=${ROOT_FS} make install
+
+      - name: Build the debian package
+        working-directory: src
+        run: |
+          dpkg-buildpackage -d -aarmhf -tarm-rpi-linux-gnueabihf
