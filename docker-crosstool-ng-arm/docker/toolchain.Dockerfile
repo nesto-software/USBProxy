@@ -1,4 +1,5 @@
 FROM ubuntu:14.04.2 as crosstool-ng_install
+LABEL org.opencontainers.image.source https://github.com/nesto-software/USBProxy
 
 # from: https://github.com/amclain/docker-crosstool-ng/blob/master/Dockerfile
 # and: https://crosstool-ng.github.io/docs/install/
