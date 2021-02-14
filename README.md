@@ -83,7 +83,7 @@ The GitHub releases do not provide signatures - just download the respective .de
 <a href="https://keyoxide.org/F1C6636C27019FD0D29307DEAE25CBF30C0DDB0C" rel="Nesto Cloud Operations">![Nesto Cloud Operations](.github/imgs/gpg_qr.svg)</a> 
 
 <img align="left" src=".github/imgs/openkeychain.png" width="50px">   
-<a href="https://www.openkeychain.org/"><b>Download OpenKeychain for Android</b></a>
+<a href="https://www.openkeychain.org/"><b>Download OpenKeychain for Android</b></a>   
 <a href="https://gnupg.org/download/">Download GNU Privacy Guard for Linux</a>
 <br clear="both">
 <br />
