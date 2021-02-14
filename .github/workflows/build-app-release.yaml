@@ -2,7 +2,6 @@ on:
   push:
     paths:
       - 'src/**'
-      - '!src/debian/changelog'
 #    branches: master
     
 jobs:
@@ -60,23 +59,12 @@ jobs:
       run: |
         DESTDIR=${ROOT_FS} make install
 
-    # TODO: move the devscripts installation into docker container image build
-    - name: Bump the package version
+    - name: Read the package version
       working-directory: usbproxy
-      id: bump-version
+      id: version
       run: |
-        VERSION=$(cat ./VERSION)
-        NEW_VERSION=$(semver bump patch $VERSION)
-        apt-get install -y devscripts
-        cd ./src && dch -v ${NEW_VERSION} --distribution main "$(git log -1 --pretty=%B)" --force-distribution
+        NEW_VERSION=$(cat ./VERSION)
         echo '::set-output name=NEW_VERSION::$NEW_VERSION'
-
-    # commit the changelog modification
-    - uses: EndBug/add-and-commit@v7
-      with:
-        add: src/debian/changelog
-        cwd: usbproxy
-        message: "chore: modify changelog"
 
     - name: Build the debian package
       working-directory: usbproxy/src
@@ -95,7 +83,7 @@ jobs:
       uses: mathieudutour/github-tag-action@v5.1
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        custom_tag: "${{ steps.bump-version.outputs.NEW_VERSION }}"
+        custom_tag: "${{ steps.version.outputs.NEW_VERSION }}"
 
     - name: Create a GitHub release
       uses: actions/create-release@v1
@@ -114,8 +102,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: usbproxy/nesto-usbproxy_${{ steps.bump-version.outputs.NEW_VERSION }}_armhf.deb
-        asset_name: nesto-usbproxy_${{ steps.bump-version.outputs.NEW_VERSION }}_armhf.deb
+        asset_path: usbproxy/nesto-usbproxy_${{ steps.version.outputs.NEW_VERSION }}_armhf.deb
+        asset_name: nesto-usbproxy_${{ steps.version.outputs.NEW_VERSION }}_armhf.deb
         asset_content_type: application/vnd.debian.binary-package
 
   upload-package:
