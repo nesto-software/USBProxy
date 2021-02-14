@@ -154,10 +154,27 @@ If you want to run the script on your own, make sure to run the install task bef
 
 Usage
 ---------
+```
+usb-mitm - command line tool for controlling USBProxy
+Usage: ./src/build/tools/usb-mitm [OPTIONS]
+Options:
+    -v <vendorId> VendorID of target device
+    -p <productId> ProductID of target device
+    -P <PluginName> Use PluginName (order is preserved)
+    -D <DeviceProxy> Use DeviceProxy
+    -H <HostProxy> Use HostProxy
+    -d Enable debug messages (-dd for increased verbosity)
+    -s Server mode, listen on port 10400
+    -c <hostname | address> Client mode, connect to server at hostname or address
+    -l Enable stream logger (logs to stderr)
+    -i Enable UDP injector
+    -x Enable Xbox360 UDPHID injector & filter
+    -k Keylogger with ROT13 filter (for demo), specify optional filename to output to instead of stderr
+    -w <filename> Write to pcap file for viewing in Wireshark
+    -h Display this message
+```
 
-> TBD: show cli parameters
-> TBD: note that -n flag is new and registers a filter
-
+There is a new option `-n` which registers the ZeroMQ filter.
 
 GPG
 ---------
