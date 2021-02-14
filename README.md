@@ -23,8 +23,7 @@ That is, the POS system is connected to the Raspberry Pi which in turn is connec
 
 We want to share our progress on this project with the open-source community as we [forked the original codebase](https://github.com/usb-tools/USBProxy-legacy) which is under the GPL-2.0.
 
-
-Our Setup
+Scope
 -------
 - **Tested Device**: [Raspberry Pi 4B](https://www.raspberrypi.org/products/raspberry-pi-4-model-b/specifications/)
 - **Distribution**: Raspberry Pi OS / Raspbian (we use Debian's packaging system)
@@ -80,6 +79,14 @@ This option is the fastest for development.
 
 > TBD: describe how to use VS Code Remote development
 
+
+Usage
+---------
+
+> TBD: show cli parameters
+> TBD: note that -n flag is new and registers a filter
+
+
 GPG
 ---------
 
@@ -97,3 +104,19 @@ The GitHub releases do not provide signatures - just download the respective .de
 <br clear="both">
 <br />
 <b>Keyserver: <a target="_blank" href="https://keys.openpgp.org/">keys.openpgp.org</a></b>
+
+IPC Example
+---------
+We provided a sample application for Node.js in the *./nodejs-client* folder.   
+The sample application connects to the USB Proxy and receives data which is read from the USB relaying.
+
+Development
+----------
+
+> TBD: we use master, dev and feature branches
+> TBD: we publish stable versions to main debian dist and daily builds from dev branch to nighty debian distribution (both are hosted internally at Nesto)
+
+Building a Release (for Maintainer)
+----------
+
+> TBD
