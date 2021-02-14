@@ -9,7 +9,7 @@ set(CMAKE_C_FLAGS "$ENV{CFLAGS} -pthread -Wall")
 set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} $ENV{CPPFLAGS} -std=gnu++11 -pthread -pedantic -Wall -felide-constructors -fno-exceptions")
 
 include_directories(${libusbproxy_SOURCE_DIR})
-LIST(APPEND PLUGINS_LINK_LIBS USBProxy libzmq.a)
+LIST(APPEND PLUGINS_LINK_LIBS USBProxy zmq)
 
 LIST(APPEND PLUGINS DeviceProxy_Loopback DeviceProxy_TCP DeviceProxy_Callback)
 

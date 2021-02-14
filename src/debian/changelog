@@ -1,3 +1,9 @@
+nesto-usbproxy (0.0.4) main; urgency=medium
+
+  * Link libzmq dynamically
+
+ -- Martin Löper <martin.loeper@nesto-software.de>  Mon, 15 Feb 2021 00:00:47 +0100
+
 nesto-usbproxy (0.0.3) main; urgency=medium
 
   * Test new release workflow 

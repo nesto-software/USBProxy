@@ -1,20 +1,41 @@
 #!/bin/bash
+set -e
 
-if [ -z "$1" ]; then
-    echo "Pass AccessKeyId as first parameter."
-    exit 1
-fi
+echo "This script is intended to configure the debian repository for the USB Proxy project and install the latest binary."
+echo ""
+echo "Setting up the APT repository which is hosted on S3..."
 
-if [ -z "$2" ]; then
-    echo "Pass SecretAccessKey as second parameter."
-    exit 1
-fi
+read -p 'AWS Access Key: '
+echo "";
+ACCESS_KEY_ID=${REPLY}
 
+read -s -p 'AWS Secret Access Key (hidden input): '
+echo "";
+SECRET_ACCESS_KEY=${REPLY}
+
+REGION=eu-central-1
+BUCKET=nesto-debian-repo-devel
+GPG_KEY_ID=92F91ABA4816493E
+PKG_NAME=nesto-usbproxy
+GPG_KEYSERVER=keys.openpgp.org
+
+echo "Installing tools which are needed by APT to access S3..."
 sudo apt-get update
 sudo apt-get install apt-transport-s3
-echo -e "AccessKeyId = '$1'\nSecretAccessKey = '$2'\nRegion = 'eu-central-1'\nToken = ''" > /etc/apt/s3auth.conf
-echo "deb s3://nesto-debian-repo-devel unofficial local" >> /etc/apt/sources.list
-gpg --keyserver keys.openpgp.org --receive-key 92F91ABA4816493E
-gpg --export --armor "92F91ABA4816493E" | apt-key add -
+
+echo "Configuring the S3 transport for APT..."
+echo -e "AccessKeyId = '$ACCESS_KEY_ID'\nSecretAccessKey = '$SECRET_ACCESS_KEY'\nRegion = '$REGION'\nToken = ''" > /etc/apt/s3auth.conf
+
+# note: please do not use nightly for production systems
+echo "deb s3://$BUCKET main aws" >> /etc/apt/sources.list
+echo "deb s3://$BUCKET nightly aws" >> /etc/apt/sources.list
+
+echo "Setting up APT keys for our S3 repo..."
+gpg --keyserver "$GPG_KEYSERVER" --receive-key "$GPG_KEY_ID"
+gpg --export --armor "$GPG_KEY_ID" | apt-key add -
+
+echo "Updating the package list with the index from our S3 repo..."
 sudo apt-get update
-sudo apt-get install nesto-usbproxy
+
+echo "Finally installing the latest version of our application..."
+sudo apt-get install $PKG_NAME

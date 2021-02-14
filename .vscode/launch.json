@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/src/build/tools/usb-mitm",
             "args": [
-                // "-v", "045e", "-p", "07f8", "-n"
+                // "-v", "045e", "-p", "07f8", "-n", "-l"
                 "-v", "04e8", "-p", "3461", "-n", "-l"
             ],
             "stopAtEntry": false,
