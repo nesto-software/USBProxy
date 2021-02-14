@@ -1,0 +1,162 @@
+on:
+  push:
+    paths:
+      - 'src/**'
+      - '!src/debian/changelog'
+#    branches: master
+    
+jobs:
+  build-and-package:
+    name: Build nesto-usbproxy debian package
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/nesto-usbproxy-deps:latest
+      credentials:
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.CR_PAT }}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        path: 'usbproxy'
+        ref: 'dev'
+
+    - uses: actions/checkout@v2
+      with:
+        repository: fsaintjacques/semver-tool
+        path: semver
+
+    - name: Build semver utility
+      run: |
+        cd semver && make install
+
+    - name: Create build directory
+      run: |
+        mkdir -p usbproxy/src/build
+
+    - name: Create Makefiles using CMake
+      working-directory: usbproxy/src/build
+      run: |
+        LDFLAGS="-L${STAGING_DIR}/usr/local/lib" \
+        CFLAGS="-I${STAGING_DIR}/usr/local/include" \
+        CXXFLAGS=$CFLAGS \
+        PKG_CONFIG_PATH=$STAGING_DIR/usr/local/lib/pkgconfig \
+        cmake \
+        "-DCMAKE_PREFIX_PATH=$STAGING_DIR/usr/local" \
+        "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR" \
+        "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" \
+        "-DCMAKE_INSTALL_PREFIX=/usr" \
+        "-DCMAKE_BUILD_TYPE=Release" \
+        "-DUSE_LIBUSB1=1" \
+        ..
+
+    - name: Run make
+      working-directory: usbproxy/src/build
+      run: |
+        make
+
+    - name: Run make install
+      working-directory: usbproxy/src/build
+      run: |
+        DESTDIR=${ROOT_FS} make install
+
+    # TODO: move the devscripts installation into docker container image build
+    - name: Bump the package version
+      working-directory: usbproxy
+      id: bump-version
+      run: |
+        VERSION=$(cat ./VERSION)
+        NEW_VERSION=$(semver bump patch $VERSION)
+        apt-get install -y devscripts
+        cd ./src && dch -v ${NEW_VERSION} --distribution main "$(git log -1 --pretty=%B)" --force-distribution
+        echo '::set-output name=NEW_VERSION::$NEW_VERSION'
+
+    # commit the changelog modification
+    - uses: EndBug/add-and-commit@v7
+      with:
+        add: src/debian/changelog
+        cwd: usbproxy
+        message: "chore: modify changelog"
+
+    - name: Build the debian package
+      working-directory: usbproxy/src
+      run: |
+        dpkg-buildpackage -d -aarmhf -tarm-rpi-linux-gnueabihf
+
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: debian-package
+        path: |
+          usbproxy/*.deb
+
+    - name: Push a new tag
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v5.1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        custom_tag: "${{ steps.bump-version.outputs.NEW_VERSION }}"
+
+    - name: Create a GitHub release
+      uses: actions/create-release@v1
+      id: create_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag_version.outputs.new_tag }}
+        release_name: Release ${{ steps.tag_version.outputs.new_tag }}
+        body: "Signed-off-by: ${{ github.actor }}"
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      id: upload-release-asset 
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: usbproxy/nesto-usbproxy_${{ steps.bump-version.outputs.NEW_VERSION }}_armhf.deb
+        asset_name: nesto-usbproxy_${{ steps.bump-version.outputs.NEW_VERSION }}_armhf.deb
+        asset_content_type: application/vnd.debian.binary-package
+
+  upload-package:
+    name: Upload nesto-usbproxy debian package into nesto repository in S3
+    runs-on: ubuntu-latest
+    needs: build-and-package
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/aptly:latest
+      credentials:
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.CR_PAT }}
+
+    steps:
+    - name: Download debian package from artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: debian-package
+
+    - name: Add package to aptly
+      env:
+        APTLY_REPO: nesto-pos-adapter-devel
+      run: |
+        aptly repo add $APTLY_REPO nesto-usbproxy_*_armhf.deb
+
+    - name: Prepare GPG private key password
+      env:
+        GPG_PRIVATE_KEY_PASSWD: ${{ secrets.GPG_PRIVATE_KEY_PASSWD }}
+      run: |
+        echo $GPG_PRIVATE_KEY_PASSWD > ./key_passwd
+
+    - name: Import GPG key
+      id: import_gpg
+      uses: crazy-max/ghaction-import-gpg@v3
+      with:
+        gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+        passphrase: ${{ secrets.GPG_PRIVATE_KEY_PASSWD }}
+
+    - name: Sign and upload to S3 
+      env:
+        GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: |
+        aptly publish repo -batch=true -passphrase-file="./key_passwd" -gpg-key="$GPG_KEY_ID" -component=aws -distribution=nightly nesto-pos-adapter-devel s3:nesto-debian-repo-devel:
