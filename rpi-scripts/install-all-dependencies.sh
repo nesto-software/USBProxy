@@ -10,9 +10,8 @@ sudo apt-get install -y cmake
 echo -e "[2/7] Installing libusb\n"
 sudo apt-get install -y libusb-1.0.0-dev
 
-echo -e "[3/7] Installing boost\n"
-sudo apt-get install -y doxygen
-sudo apt-get install -y libboost-all-dev
+echo -e "[3/7] Installing boost libs: chrono, timer, system\n"
+sudo apt-get install -y libboost-chrono-dev libboost-timer-dev libboost-system-dev
 
 echo -e "[4/7] Installing libzmq\n"
 git clone https://github.com/zeromq/libzmq.git /tmp/libzmq || echo "Skipped clone."
