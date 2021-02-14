@@ -88,6 +88,7 @@ allow-hotplug eth0
 iface eth0 inet static
 address 169.254.100.1
 netmask 255.255.255.0
+gateway 169.254.100.2
 ```
 7. Insert the SD card into your pi and connect the pi to your laptop using an ethernet cable
 8. Boot your pi. It should be accessible via the link-local ip `169.254.100.1`.
@@ -105,12 +106,7 @@ sysctl -w net.ipv4.ip_forward=1
 sudo iptables -t nat -A POSTROUTING -o wlp59s0 -j MASQUERADE
 ```
 11. Connect to the pi using ssh: `ssh pi@169.254.100.1` using default password `raspberry`.
-12. Configure the pi to use your laptop as gateway:   
-```
-sudo ip route del default
-sudo ip route add default via 169.254.100.2 dev eth0 src 169.254.100.1
-```
-13. Check if your pi can access the internet via your laptop: `ping 8.8.8.8` and `ping google.de` (to check domain resolution)
+12. Check if your pi can access the internet via your laptop: `ping 8.8.8.8` and `ping google.de` (to check domain resolution)
 
 #### Preparing the development environment
 1. Install [Visual Studio Code](https://code.visualstudio.com/download)
