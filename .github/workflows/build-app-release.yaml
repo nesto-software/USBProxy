@@ -95,7 +95,11 @@ jobs:
         release_name: Release ${{ steps.tag_version.outputs.new_tag }}
         body: "Signed-off-by: ${{ github.actor }}"
 
-    - name: Upload Release Asset
+    - name: Compress the release asset
+      run: |
+        tar -cvjSf nesto-usbproxy_${{ steps.version.outputs.NEW_VERSION }}_armhf.tar.bz2 usbproxy/nesto-usbproxy_${{ steps.version.outputs.NEW_VERSION }}_armhf.deb
+
+    - name: Upload Release Asset - Debian Package
       uses: actions/upload-release-asset@v1
       id: upload-release-asset 
       env:
@@ -104,6 +108,17 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: usbproxy/nesto-usbproxy_${{ steps.version.outputs.NEW_VERSION }}_armhf.deb
         asset_name: nesto-usbproxy_${{ steps.version.outputs.NEW_VERSION }}_armhf.deb
+        asset_content_type: application/vnd.debian.binary-package
+
+    - name: Upload Release Asset - Archive
+      uses: actions/upload-release-asset@v1
+      id: upload-release-asset-archive
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: nesto-usbproxy_${{ steps.version.outputs.NEW_VERSION }}_armhf.tar.bz2
+        asset_name: nesto-usbproxy_${{ steps.version.outputs.NEW_VERSION }}_armhf.tar.bz2
         asset_content_type: application/vnd.debian.binary-package
 
   upload-package:
