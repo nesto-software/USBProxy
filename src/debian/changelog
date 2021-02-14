@@ -1,3 +1,9 @@
+nesto-usbproxy (0.0.3) main; urgency=medium
+
+  * Test new release workflow 
+
+ -- Martin Löper <martin.loeper@nesto-software.de>  Sun, 14 Feb 2021 02:09:38 +0100
+
 nesto-usbproxy (0.0.2) main; urgency=medium
 
   * Test the versioning and publishing of further images
