@@ -31,9 +31,9 @@ Our Setup
 - **Architecture**: armhf (we do not build for arm64 yet)
 - **Build System**: crosstool-NG (we are cross-building using GitHub workflows)
 - **Additional Plugins**: We implemented IPC capability using [ZeroMQ](http://zeromq.org/) to channel the data out to other applications (running Python or Node.js). The language bindings which were provided by the original project did not work for us (throwing segfaults).
-- **Additional Packaging**: We provide an alternative version of the application as [AWS Greengrass Lambda Package](https://github.com/aws/aws-greengrass-core-sdk-c). [Greengrass](https://aws.amazon.com/de/greengrass/) can be used to run the application on IoT devices in production. It guarantees that the process is running isolated and does stuff similar to systemd, such as auto-restarting the application on failure. Furthermore it is an integral part of delivering a secure transport into the AWS cloud.
+- **Additional Packaging**: We provide an alternative version of the application as [AWS Greengrass Lambda Package](https://github.com/aws/aws-greengrass-core-sdk-c). [Greengrass](https://aws.amazon.com/de/greengrass/) can be used to run the application on IoT devices in production. It guarantees that the process is running isolated and does stuff similar to systemd, such as auto-restarting the application on failure. Furthermore, it is an integral part of delivering a secure transport into the AWS cloud.
 
-> :information_source: **Supported Devices**: There are many devices which are working with this application. You have to make sure the device has a USB port which can operate in client mode. OTG ports are usually capable of doing that. Make also sure your device is being added to the [list of device ids for GadgetFS](https://github.com/nesto-software/USBProxy/blob/master/src/Plugins/Hosts/GadgetFS_helpers.c#L188).
+> :information_source: **Supported Devices**: There are many more devices which are working with this application. You have to make sure the device has a USB port which can operate in client mode. OTG ports are usually capable of doing that. Make also sure your device is being added to the [list of device ids for GadgetFS](https://github.com/nesto-software/USBProxy/blob/master/src/Plugins/Hosts/GadgetFS_helpers.c#L188).
 
 
 
@@ -47,23 +47,41 @@ You must add AWS credentials at the top of the file in advance.
 #!/bin/bash
 set -e
 
-# set AWS credentials to access S3 bucket which hosts the debian repository
-ACCESS_KEY_ID=
-SECRET_ACCESS_KEY=
+echo "Setting up the APT repository which is hosted on S3..."
+
+read -p 'AWS Access Key: '
+echo "";
+ACCESS_KEY_ID=${REPLY}
+
+read -s -p 'AWS Secret Access Key (hidden input): '
+echo "";
+SECRET_ACCESS_KEY=${REPLY}
 
 REGION=eu-central-1
 BUCKET=nesto-debian-repo-devel
 GPG_KEY_ID=92F91ABA4816493E
 PKG_NAME=nesto-usbproxy
-DISTRIBUTION=main   # main or nightly
+GPG_KEYSERVER=keys.openpgp.org
 
+echo "Installing tools which are needed by APT to access S3..."
 sudo apt-get update
 sudo apt-get install apt-transport-s3
+
+echo "Configuring the S3 transport for APT..."
 echo -e "AccessKeyId = '$ACCESS_KEY_ID'\nSecretAccessKey = '$SECRET_ACCESS_KEY'\nRegion = '$REGION'\nToken = ''" > /etc/apt/s3auth.conf
-echo "deb s3://$BUCKET $DISTRIBUTION aws" >> /etc/apt/sources.list
-gpg --keyserver keys.openpgp.org --receive-key "$GPG_KEY_ID"
+
+# note: please do not use nightly for production systems
+echo "deb s3://$BUCKET main aws" >> /etc/apt/sources.list
+echo "deb s3://$BUCKET nightly aws" >> /etc/apt/sources.list
+
+echo "Setting up APT keys for our S3 repo..."
+gpg --keyserver "$GPG_KEYSERVER" --receive-key "$GPG_KEY_ID"
 gpg --export --armor "$GPG_KEY_ID" | apt-key add -
+
+echo "Updating the package list with the index from our S3 repo..."
 sudo apt-get update
+
+echo "Finally installing the latest version of our application..."
 sudo apt-get install $PKG_NAME
 ```
 
