@@ -140,7 +140,7 @@ If the build finished without errors, you could try to install and run the binar
 1. Connect a host device to the raspberry pi's USB C port. This could be another Linux computer or even the same device which you are using for remote development.
 2. Connect a client device to one of the raspberry pi's USB A ports. This could be a USB keyboard for example.
 3. Find out the keyboard's USB vendor and product ID:   
-```
+```bash
 sudo apt install usbutils
 sudo lsusb -v
 ```
@@ -198,6 +198,17 @@ IPC Example
 ---------
 We provided a sample application for Node.js in the *./nodejs-client* folder.   
 The sample application connects to the USB Proxy and receives data which is read from the USB relaying.
+
+You can run the example by doing:
+1. Start the usb-mitm application, e.g. using `./scripts/usb-mitm.sh` if you already built it. Please make sure to adjust the vendor and product ids in the shell script beforehand.
+2. Install Node.js binary from [nodejs.org](https://nodejs.org/en/download/) or via nvm.
+3. Install Node.js dependencies:
+```bash
+cd nodejs-client
+npm install
+```
+4. Run the script: `node ./nodejs-client/index.js`
+5. You should see that the application receives buffers once data is transferred between your USB device and the host. In case you are using a USB keyboard as test device, you should see an incoming buffer for each keydown and keyup event.
 
 Development
 ----------
