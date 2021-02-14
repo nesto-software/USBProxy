@@ -26,9 +26,10 @@ We want to share our progress on this project with the open-source community as 
 Scope
 -------
 - **Tested Device**: [Raspberry Pi 4B](https://www.raspberrypi.org/products/raspberry-pi-4-model-b/specifications/)
+- **OS:** Linux
 - **Distribution**: Raspberry Pi OS / Raspbian (we use Debian's packaging system)
 - **Architecture**: armhf (we do not build for arm64 yet)
-- **Build System**: crosstool-NG (we are cross-building using GitHub workflows)
+- **Build System**: crosstool-NG (we are cross-compiling using GitHub workflows)
 - **Additional Plugins**: We implemented IPC capability using [ZeroMQ](http://zeromq.org/) to channel the data out to other applications (running Python or Node.js). The language bindings which were provided by the original project did not work for us (throwing segfaults).
 - **Additional Packaging**: We provide an alternative version of the application as [AWS Greengrass Lambda Package](https://github.com/aws/aws-greengrass-core-sdk-c). [Greengrass](https://aws.amazon.com/de/greengrass/) can be used to run the application on IoT devices in production. It guarantees that the process is running isolated and does stuff similar to systemd, such as auto-restarting the application on failure. Furthermore, it is an integral part of delivering a secure transport into the AWS cloud.
 
