@@ -64,7 +64,7 @@ jobs:
       id: version
       run: |
         NEW_VERSION=$(cat ./VERSION)
-        echo '::set-output name=NEW_VERSION::$NEW_VERSION'
+        echo "::set-output name=NEW_VERSION::$NEW_VERSION"
 
     - name: Build the debian package
       working-directory: usbproxy/src
