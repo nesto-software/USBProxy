@@ -23,6 +23,7 @@ You must add AWS credentials at the top of the file in advance.
 
 ```bash
 #!/bin/bash
+set -e
 
 # set AWS credentials to access S3 bucket which hosts the debian repository
 ACCESS_KEY_ID=
@@ -34,8 +35,6 @@ GPG_KEY_ID=92F91ABA4816493E
 PKG_NAME=nesto-usbproxy
 DISTRIBUTION=main   # main or nightly
 
-set -e
-
 sudo apt-get update
 sudo apt-get install apt-transport-s3
 echo -e "AccessKeyId = '$ACCESS_KEY_ID'\nSecretAccessKey = '$SECRET_ACCESS_KEY'\nRegion = '$REGION'\nToken = ''" > /etc/apt/s3auth.conf
@@ -45,6 +44,26 @@ gpg --export --armor "$GPG_KEY_ID" | apt-key add -
 sudo apt-get update
 sudo apt-get install $PKG_NAME
 ```
+
+```bash
+#!/bin/bash
+set -e
+
+FILE=/tmp/nesto-usbproxy-latest.deb
+
+curl -s https://api.github.com/repos/nesto-software/USBProxy/releases/latest \
+| grep "browser_download_url.*deb" \
+| cut -d : -f 2,3 \
+| tr -d \" \
+| wget -qi - -O "$FILE"
+
+sudo dpkg -i "$FILE"
+```
+
+| Method    | Command                                                                                           |
+|:----------|:--------------------------------------------------------------------------------------------------|
+| **curl**  | `sh -c "$(curl -fsSL https://raw.githubusercontent.com/nesto-software/USBProxy/master/scripts/install-from-release.sh)"` |
+| **wget**  | `sh -c "$(wget -O- https://raw.githubusercontent.com/nesto-software/USBProxy/master/scripts/install-from-release.sh)"`   |
 
 GPG
 ---------
