@@ -57,7 +57,7 @@ We provide instructions for each method in the following.
 | **curl**  | `sh -c "$(curl -fsSL https://raw.githubusercontent.com/nesto-software/USBProxy/master/scripts/install-from-release.sh)"` |
 | **wget**  | `sh -c "$(wget -O- https://raw.githubusercontent.com/nesto-software/USBProxy/master/scripts/install-from-release.sh)"`   |
 
-### Install via Package Manager (binary)
+### Install via APT Package Manager (binary)
 
 > :information_source: **Internal**: We cannot provide a public package repository at the moment. The access is thus restricted to project members and Nesto employees. Others should use the GitHub releases option above.
 
