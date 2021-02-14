@@ -228,3 +228,6 @@ Building a Release (for Maintainers)
 2. `./.github/create-release.sh (major|minor|patch)`
 3. git add -A && git commit && git push
 4. Create a PR into master and describe the changes; Make sure to squash the commits.
+
+Use a commit message like: `chore: prepare release for vx.y.z`.   
+Use a PR title like: `chore: release vx.y.z`.
