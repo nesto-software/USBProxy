@@ -126,10 +126,10 @@ Host Pi
 10. Open the folder inside the explorer using Ctrl+Shift+E -> */home/pi/USBProxy/*
 
 #### Installing dependencies
-1. Run `./rpi-scripts/install-all-dependencies.sh`
+- Run `./rpi-scripts/install-all-dependencies.sh`
 
 #### Compiling
-1. Click on the Build button on the bottom VSCode task bar
+1. Click on the Build button in the bottom VSCode task bar
 2. Choose a kit (e.g. GCC 7.5.0)
 3. Wait for the build to finish
 
