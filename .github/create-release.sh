@@ -1,5 +1,8 @@
 #!/bin/bash
-# Usage: merge all feature branches into dev first
+
+# USAGE: ./create-release.sh (major|minor|patch)
+
+# HOWOT: merge all feature branches into dev first
 #        run this script on dev branch
 #        create a PR to merge dev into master (will create a new release)
 
@@ -8,7 +11,10 @@ set -e
 
 echo "Please note: If you did not use this script before, please run ./install-release-tools.sh!"
 
-BUMP="${1:-path}"
+BUMP="${1:-patch}"
 VERSION=$(cat "${DIR}/../VERSION")
-NEW_VERSION=$(semver bump $BUMP $VERSION)
-(cd "${DIR}/../src" && dch -v ${NEW_VERSION} --distribution main "$(git log -1 --pretty=%B)" --force-distribution)
+NEW_VERSION=$(semver bump "$BUMP" "$VERSION")
+(cd "${DIR}/../src" && dch -v ${NEW_VERSION} --distribution main --force-distribution)
+echo "$NEW_VERSION" > "${DIR}/../VERSION"
+
+echo "You are ready to commit the new version: git add -A && git commit -m \"chore: release v${NEW_VERSION}\""
