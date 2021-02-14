@@ -78,8 +78,65 @@ The binary should be cross-compiled using a docker container and the result is p
 ### Manually compile on armhf (source)
 This option is the fastest for development.
 
-> TBD: describe how to use VS Code Remote development
+#### Prepare Raspberry Pi and Connection to Laptop
 
+1. Install rpi-imager: `sudo apt install rpi-imager`
+2. Insert SD card into laptop
+3. Start rpi-imager, choose SD card, choose *Raspberry Pi OS (Other)* -> *Raspberry Pi OS Lite (32-bit)* and flash
+4. Mount the SD card on your laptop and set env variable $SD_BOOT to boot partition and $SD_DATA to data partition
+5. Enable ssh for the pi by placing an empty file called *ssh* into boot partition: `touch ${SD_BOOT}/ssh`
+6. Set a link-local IP for your pi by appending the following to *${SD_DATA}/etc/network/interfaces*:   
+```
+auto eth0
+allow-hotplug eth0
+iface eth0 inet static
+address 169.254.100.1
+netmask 255.255.255.0
+```
+7. Insert the SD card into your pi and connect the pi to your laptop using an ethernet cable
+8. Boot your pi. It should be accessible via the link-local ip `169.254.100.1`.
+9. Configure your laptop with a link-local ip (e.g. *169.254.100.2*) on the interface which is connected to the pi (e.g. a USB to ethernet adapter labeled *enx00e04c6b1c7b*):   
+```
+sudo ip addr add 169.254.100.2 dev enx00e04c6b1c7b
+sudo route add -net 169.254.0.0 netmask 255.255.0.0 dev enx00e04c6b1c7b
+```
+10. Allow the pi to access the internet via your laptop by confguring your laptop accordingly as follows:   
+```
+# enable ip forwarding
+sysctl -w net.ipv4.ip_forward=1
+
+# enable ip masquerading on the interface which is used to access the internet (e.g. wlp59s0)
+sudo iptables -t nat -A POSTROUTING -o wlp59s0 -j MASQUERADE
+```
+11. Connect to the pi using ssh: `ssh pi@169.254.100.1` using default password `raspberry`.
+12. Configure the pi to use your laptop as gateway:   
+```
+sudo ip route del default
+sudo ip route add default via 169.254.100.2 dev eth0 src 169.254.100.1
+```
+13. Check if your pi can access the internet via your laptop: `ping 8.8.8.8` and `ping google.de` (to check domain resolution)
+
+#### Preparing the development environment
+1. Install [Visual Studio Code](https://code.visualstudio.com/download)
+2. Install the following extensions: `ms-vscode-remote.remote-ssh` and `ms-vscode-remote.remote-ssh-edit`
+3. Restart VSCode
+4. Open the default configuration file using Ctrl+Shift+P + *Remote-SSH: Open Configuration File...* -> Choose default config file in your user's home directory (i.e. *~/.ssh/config*) and paste the following:
+```
+Host Pi
+  HostName 169.254.100.1
+  User pi
+```
+5. Connect to the Pi using Ctrl+Shift+P + *Remote-SSH: Connect to Host...* -> Pi and with the default password *raspberry* (when prompted for it). This might take a while because VSCode will transfer a bundle to the pi and install everything that is needed for remote development.
+6. Install remote VSCode extensions: `ms-vscode.cpptools`, `twxs.cmake`, `ms-vscode.cmake-tools`
+7. Open a new terminal on the remote device using Ctrl+Shift+` and use it for subsequent Linux commands
+8. Optional: Create a personal access token to be able to clone the USB Proxy repo and push to it. The token needs the *public_repo* scope.
+9. Clone the USB Proxy repository from GitHub: `git clone https://${TOKEN}:x-oauth-basic@github.com/nesto-software/USBProxy.git`
+10. Open the folder inside the explorer using Ctrl+Shift+E -> */home/pi/USBProxy/*
+
+#### Installing dependencies
+1. Run `./rpi-scripts/install-all-dependencies.sh`
+
+#### Compile
 
 Usage
 ---------
