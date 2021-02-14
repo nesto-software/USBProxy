@@ -224,7 +224,7 @@ Developers are expected to fork the repository and to work on their own feature 
 Building a Release (for Maintainers)
 ----------
 
-0. Switch to dev branch and pull
-1. `./.github/create-release.sh (major|minor|patch)`
-2. git add -A && git commit && git push
-3. Create a PR into master and describe the changes; Make sure to squash the commits.
+1. Switch to dev branch and pull
+2. `./.github/create-release.sh (major|minor|patch)`
+3. git add -A && git commit && git push
+4. Create a PR into master and describe the changes; Make sure to squash the commits.
