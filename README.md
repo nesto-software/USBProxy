@@ -46,7 +46,7 @@ There are 4 installation methods:
 - Binaries uploaded to GitHub releases (public; production ready)
 - Binaries uploaded to Debian repository on S3 (Nesto-internal; production & nightly builds)
 - Manually cross-compile source code (using code in *./docker-crosstool-ng-arm* folder)
-- Manually compile on the Raspberry Pi using [VS Code Remote Development](https://code.visualstudio.com/docs/remote/remote-overview)
+- Manually compile source code on the Raspberry Pi using [VS Code Remote Development](https://code.visualstudio.com/docs/remote/remote-overview)
 
 We provide instructions for each method in the following.
 
@@ -61,12 +61,13 @@ We provide instructions for each method in the following.
 
 > :information_source: **Internal**: We cannot provide a public package repository at the moment. The access is thus restricted to project members and Nesto employees. Others should use the GitHub releases option above.
 
+
 | Method    | Command                                                                                           |
 |:----------|:--------------------------------------------------------------------------------------------------|
 | **curl**  | `sh -c "$(curl -fsSL https://raw.githubusercontent.com/nesto-software/USBProxy/master/rpi-scripts/install-repo.sh)"` |
 | **wget**  | `sh -c "$(wget -O- https://raw.githubusercontent.com/nesto-software/USBProxy/master/rpi-scripts/install-repo.sh)"`   |
 
-### Build on x64 (source)
+### Manually compile on x86-64 (source)
 ```bash
 cd ./docker-crosstool-ng-arm
 ./build-binary.sh
@@ -74,7 +75,9 @@ cd ./docker-crosstool-ng-arm
 
 The binary should be cross-compiled using a docker container and the result is placed in `docker-crosstool-ng-arm/bin`.
 
-### Build on armhf (source)
+### Manually compile on armhf (source)
+This option is the fastest for development.
+
 > TBD: describe how to use VS Code Remote development
 
 GPG
