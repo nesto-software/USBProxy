@@ -75,10 +75,16 @@ GPG
 ---------
 
 #### Add our key to your keychain!
+
+We use [GPG](https://de.wikipedia.org/wiki/GNU_Privacy_Guard) to sign our binary releases.
+In order to install packages from internal repositories, you must add our key for SecureApt to work.
+The GitHub releases do not provide signatures - just download the respective .deb file and you are ready to go.
+
 <a href="https://keyoxide.org/F1C6636C27019FD0D29307DEAE25CBF30C0DDB0C" rel="Nesto Cloud Operations">![Nesto Cloud Operations](.github/imgs/gpg_qr.svg)</a> 
 
 <img align="left" src=".github/imgs/openkeychain.png" width="50px">   
 <br />
 <a align="left" href="https://www.openkeychain.org/"><b>Download OpenKeychain</b></a>
 <br clear="both">
+<br />
 <b>Keyserver: <a href="https://keys.openpgp.org/">https://keys.openpgp.org/</a></b>
