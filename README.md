@@ -37,73 +37,45 @@ Our Setup
 
 
 
-Install
+Getting Started
 -------
 
-In order to install USBProxy on your Raspberry Pi, please use the following snippet.
-You must add AWS credentials at the top of the file in advance.
+## Installation
 
-```bash
-#!/bin/bash
-set -e
+There are 4 installation methods:
+- Binaries uploaded to GitHub releases (public; production ready)
+- Binaries uploaded to Debian repository on S3 (Nesto-internal; production & nightly builds)
+- Manually cross-compile source code (using code in *./docker-crosstool-ng-arm* folder)
+- Manually compile on the Raspberry Pi using [VS Code Remote Development](https://code.visualstudio.com/docs/remote/remote-overview)
 
-echo "Setting up the APT repository which is hosted on S3..."
+We provide instructions for each method in the following.
 
-read -p 'AWS Access Key: '
-echo "";
-ACCESS_KEY_ID=${REPLY}
-
-read -s -p 'AWS Secret Access Key (hidden input): '
-echo "";
-SECRET_ACCESS_KEY=${REPLY}
-
-REGION=eu-central-1
-BUCKET=nesto-debian-repo-devel
-GPG_KEY_ID=92F91ABA4816493E
-PKG_NAME=nesto-usbproxy
-GPG_KEYSERVER=keys.openpgp.org
-
-echo "Installing tools which are needed by APT to access S3..."
-sudo apt-get update
-sudo apt-get install apt-transport-s3
-
-echo "Configuring the S3 transport for APT..."
-echo -e "AccessKeyId = '$ACCESS_KEY_ID'\nSecretAccessKey = '$SECRET_ACCESS_KEY'\nRegion = '$REGION'\nToken = ''" > /etc/apt/s3auth.conf
-
-# note: please do not use nightly for production systems
-echo "deb s3://$BUCKET main aws" >> /etc/apt/sources.list
-echo "deb s3://$BUCKET nightly aws" >> /etc/apt/sources.list
-
-echo "Setting up APT keys for our S3 repo..."
-gpg --keyserver "$GPG_KEYSERVER" --receive-key "$GPG_KEY_ID"
-gpg --export --armor "$GPG_KEY_ID" | apt-key add -
-
-echo "Updating the package list with the index from our S3 repo..."
-sudo apt-get update
-
-echo "Finally installing the latest version of our application..."
-sudo apt-get install $PKG_NAME
-```
-
-```bash
-#!/bin/bash
-set -e
-
-FILE=/tmp/nesto-usbproxy-latest.deb
-
-curl -s https://api.github.com/repos/nesto-software/USBProxy/releases/latest \
-| grep "browser_download_url.*deb" \
-| cut -d : -f 2,3 \
-| tr -d \" \
-| wget -qi - -O "$FILE"
-
-sudo dpkg -i "$FILE"
-```
+### Install via GitHub Releases Download (binary)
 
 | Method    | Command                                                                                           |
 |:----------|:--------------------------------------------------------------------------------------------------|
 | **curl**  | `sh -c "$(curl -fsSL https://raw.githubusercontent.com/nesto-software/USBProxy/master/scripts/install-from-release.sh)"` |
 | **wget**  | `sh -c "$(wget -O- https://raw.githubusercontent.com/nesto-software/USBProxy/master/scripts/install-from-release.sh)"`   |
+
+### Install via Package Manager (binary)
+
+> :information_source: **Internal**: We cannot provide a public package repository at the moment. The access is thus restricted to project members and Nesto employees. Others should use the GitHub releases option above.
+
+| Method    | Command                                                                                           |
+|:----------|:--------------------------------------------------------------------------------------------------|
+| **curl**  | `sh -c "$(curl -fsSL https://raw.githubusercontent.com/nesto-software/USBProxy/master/rpi-scripts/install-repo.sh)"` |
+| **wget**  | `sh -c "$(wget -O- https://raw.githubusercontent.com/nesto-software/USBProxy/master/rpi-scripts/install-repo.sh)"`   |
+
+### Build on x64 (source)
+```bash
+cd ./docker-crosstool-ng-arm
+./build-binary.sh
+```
+
+The binary should be cross-compiled using a docker container and the result is placed in `docker-crosstool-ng-arm/bin`.
+
+### Build on armhf (source)
+> TBD: describe how to use VS Code Remote development
 
 GPG
 ---------
