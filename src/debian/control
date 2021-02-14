@@ -10,5 +10,5 @@ Homepage: https://github.com/nesto-software/USBProxy-legacy
 
 Package: nesto-usbproxy
 Architecture: armhf
-Depends: libusb-1.0-0, libudev1, coreutils, sed
+Depends: libzmq3, libusb-1.0-0, libudev1, coreutils, sed
 Description: Enhanced USBProxy utility
