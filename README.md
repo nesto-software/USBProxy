@@ -78,5 +78,7 @@ GPG
 <a href="https://keyoxide.org/F1C6636C27019FD0D29307DEAE25CBF30C0DDB0C" rel="Nesto Cloud Operations">![Nesto Cloud Operations](.github/imgs/gpg_qr.svg)</a> 
 
 <img align="left" src=".github/imgs/openkeychain.png" width="50px">   
-
+<br />
 <a align="left" href="https://www.openkeychain.org/"><b>Download OpenKeychain</b></a>
+<br clear="both">
+<b>Keyserver: <a href="https://keys.openpgp.org/">https://keys.openpgp.org/</a></b>
