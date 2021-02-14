@@ -213,10 +213,18 @@ npm install
 Development
 ----------
 
-> TBD: we use master, dev and feature branches
-> TBD: we publish stable versions to main debian dist and daily builds from dev branch to nighty debian distribution (both are hosted internally at Nesto)
+We use the following Git Feature-Branch-Workflow:
 
-Building a Release (for Maintainer)
+The master branch is used to build stable releases. The code in master must always compile. Only project maintainers are allowed to merge into master via a PR. Merging into master is allowed from dev branch only. Merging into master usually results into a new release version when files inside the *src* folder are modified.
+
+The dev branch is used to prepare a release. Developers are expected to merge or rebase their branch with dev frequently. The dev branch is used to build nightly releases. The code in dev should always compile. Merging into dev is allowed from all feature branches and requires a PR which must be approved by at least one project maintainer. Merging into dev results into an instant nightly release when files inside the *src* folder are modified.
+
+Developers are expected to fork the repository and to work on their own feature branches. Once the work is done, please submit a PR into dev branch. We will merge into master and create a release as soon as possible.
+
+Building a Release (for Maintainers)
 ----------
 
-> TBD
+0. Switch to dev branch and pull
+1. `./.github/create-release.sh (major|minor|patch)`
+2. git add -A && git commit && git push
+3. Create a PR into master and describe the changes; Make sure to squash the commits.
