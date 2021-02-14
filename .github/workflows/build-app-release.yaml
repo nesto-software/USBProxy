@@ -2,7 +2,7 @@ on:
   push:
     paths:
       - 'src/**'
-#    branches: master
+    branches: master
     
 jobs:
   build-and-package:
