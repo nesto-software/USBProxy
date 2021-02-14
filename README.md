@@ -6,14 +6,20 @@ USB Proxy for Raspberry Pi (armhf)
 </p>
 
 ![.github/workflows/build-app-nightly.yaml](https://github.com/nesto-software/USBProxy/workflows/.github/workflows/build-app-nightly.yaml/badge.svg?branch=dev)
+![.github/workflows/build-app-release.yaml](https://github.com/nesto-software/USBProxy/workflows/.github/workflows/build-app-release.yaml/badge.svg)
 
 
-Status
+Heads Up!
 ------
 This project is currently being refactored by Nesto.   
 If you want to participate, feel free to reach out!
-
+ 
 Martin Löper `<martin.loeper@nesto-software.de>`
+
+Mission
+-------
+
+
 
 Install
 -------
@@ -68,3 +74,5 @@ sudo dpkg -i "$FILE"
 GPG
 ---------
 <a href="https://keyoxide.org/F1C6636C27019FD0D29307DEAE25CBF30C0DDB0C" rel="Nesto Cloud Operations">![Nesto Cloud Operations](.github/imgs/gpg_qr.svg)</a> 
+
+<a href="https://www.openkeychain.org/">![OpenKeychain](.github/imgs/openkeychain.png)</a> 
