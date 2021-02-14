@@ -104,7 +104,7 @@ The GitHub releases do not provide signatures - just download the respective .de
 <a target="_blank" href="https://gnupg.org/download/">Download GNU Privacy Guard for Linux</a>
 <br clear="both">
 <br />
-<b>Keyserver: <a target="_blank" href="https://keys.openpgp.org/">keys.openpgp.org</a></b>
+<b>Keyserver: <a target="_blank" href="https://keys.openpgp.org/search?q=F1C6636C27019FD0D29307DEAE25CBF30C0DDB0C">keys.openpgp.org</a></b>
 
 IPC Example
 ---------
