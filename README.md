@@ -128,7 +128,29 @@ Host Pi
 #### Installing dependencies
 1. Run `./rpi-scripts/install-all-dependencies.sh`
 
-#### Compile
+#### Compiling
+1. Click on the Build button on the bottom VSCode task bar
+2. Choose a kit (e.g. GCC 7.5.0)
+3. Wait for the build to finish
+
+If the build finished without errors, you could try to install and run the binary.
+
+
+#### Install and run (with debugger attached)
+1. Connect a host device to the raspberry pi's USB C port. This could be another Linux computer or even the same device which you are using for remote development.
+2. Connect a client device to one of the raspberry pi's USB A ports. This could be a USB keyboard for example.
+3. Find out the keyboard's USB vendor and product ID:   
+```
+sudo apt install usbutils
+sudo lsusb -v
+```
+4. The header of the device descriptor looks something like this: `Bus 001 Device 004: ID 045e:07f8 Microsoft Corp. Wired Keyboard 600 (model 1576)` with *045e* being the vendor id and *07f8* being the product id.
+5. Open `.vscode/launch.json` and adjust the *-v* and *-p* arguments in L14 with the values obtained from step 4. Example given in L13.
+6. Open the *Run and Debug* view using Ctlr+Shift+D and start the *Install + Run* launch configuration
+
+Please note that you must run the application with root privileges. The launch configuration takes care of that for you.
+
+If you want to run the script on your own, make sure to run the install task before (i.e. Ctrl+P -> *task install* -> Enter -> Enter). This is needed to copy shared libraries into appropriate system folders. You can run the binary from the repository root by doing: `./src/build/tools/usb-mitm --help`. Do not forget to use **sudo** when running anything other than the help menu view. We need root permissions to access the usb subsystem and read from devices.
 
 Usage
 ---------
