@@ -36,10 +36,6 @@ Scope
 > :information_source: **Supported Devices**: There are many more devices which are working with this application. You have to make sure the device has a USB port which can operate in client mode. OTG ports are usually capable of doing that. Make also sure your device is being added to the [list of device ids for GadgetFS](https://github.com/nesto-software/USBProxy/blob/master/src/Plugins/Hosts/GadgetFS_helpers.c#L188).
 
 
-
-Getting Started
--------
-
 ## Installation
 
 There are 4 installation methods:
