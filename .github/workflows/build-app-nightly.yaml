@@ -6,6 +6,7 @@ on:
     branches: dev
   schedule:
     - cron: "0 0 * * *"
+  workflow_dispatch:
 
 env:
   STAGING_DIR: /usr/raspberry-build/staging
