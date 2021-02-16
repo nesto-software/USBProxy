@@ -232,4 +232,8 @@ Building a Release (for Maintainers)
 4. Create a PR into master and describe the changes; Make sure to squash the commits.
 
 Use a commit message like: `chore: prepare release for vx.y.z`.   
+<<<<<<< HEAD
 Use a PR title like: `chore: release vx.y.z`.
+=======
+Use a PR title like: `chore: release vx.y.z`.
+>>>>>>> 82b30a6d0ac98da68c99799c8a4e675e1474428b
