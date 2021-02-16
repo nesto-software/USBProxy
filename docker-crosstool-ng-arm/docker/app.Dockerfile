@@ -25,6 +25,7 @@ RUN LDFLAGS="-L${STAGING_DIR}/usr/local/lib" \
     "-DCMAKE_INSTALL_PREFIX=/usr" \
     "-DCMAKE_BUILD_TYPE=Release" \
     "-DUSE_LIBUSB1=1" \
+    "-Daws-greengrass-core-sdk-c_DIR=/usr/local/lib/" \
     ..
 
 RUN make
