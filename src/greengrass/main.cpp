@@ -20,6 +20,7 @@ void run_proxy(zmq::socket_t *frontend, zmq::socket_t *backend) {
 
 void handle_signal(int signum)
 {
+	(void)signum;
 	done = 1;
 }
 
@@ -59,7 +60,7 @@ int main() {
 		const std::string productIdStr = productId;
     	cfg->set("productId", productIdStr);
 	}
-	
+
     cfg->set("DeviceProxy", "DeviceProxy_LibUSB");
     cfg->set("HostProxy", "HostProxy_GadgetFS");
 	cfg->set("DeviceProxy::nice", "50");
