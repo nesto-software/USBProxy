@@ -18,9 +18,15 @@
             "problemMatcher": []
         },
         {
+            "label": "prepare",
+            "type": "shell",
+            "command": "mkdir -p src/build"
+        },
+        {
             "label": "all",
             "dependsOrder": "sequence",
             "dependsOn": [
+                "prepare",
                 "cmake",
                 "install"
             ]
