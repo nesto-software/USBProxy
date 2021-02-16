@@ -79,7 +79,7 @@ int main() {
 
     int status;
 	do {
-		manager=new Manager(false);
+		manager=new Manager(cfg);
 		manager->load_plugins(cfg);
 		cfg->print_config();
 
