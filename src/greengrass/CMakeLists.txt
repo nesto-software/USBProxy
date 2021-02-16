@@ -13,4 +13,5 @@ target_compile_options(${TOOL} PRIVATE -Werror -Wall -Wextra -pedantic -std=c++1
 install(TARGETS ${TOOL} RUNTIME DESTINATION ${INSTALL_DEFAULT_BINDIR})
 
 # build the deployment package
-aws_lambda_package_target(${TOOL})
+# the following is only working with: https://github.com/awslabs/aws-lambda-cpp
+#aws_lambda_package_target(${TOOL})

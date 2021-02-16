@@ -90,6 +90,11 @@ jobs:
         path: |
           usbproxy/*.deb
 
+    - name: Create greengrass deployment package
+      working-directory: usbproxy/src/build/greengrass/
+      run: |
+        zip usb-mitm-gg.zip usb-mitm-gg
+
     - name: Upload Release Asset - Greengrass Deployment Package
       uses: actions/upload-artifact@v2
       with:
