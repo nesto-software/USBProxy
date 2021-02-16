@@ -50,13 +50,13 @@ jobs:
         CXXFLAGS=$CFLAGS \
         PKG_CONFIG_PATH=$STAGING_DIR/usr/local/lib/pkgconfig \
         cmake \
+        "-Daws-greengrass-core-sdk-c_DIR=${STAGING_DIR}/usr/local/lib/" \
         "-DCMAKE_PREFIX_PATH=$STAGING_DIR/usr/local" \
         "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR" \
         "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" \
         "-DCMAKE_INSTALL_PREFIX=/usr" \
         "-DCMAKE_BUILD_TYPE=Release" \
         "-DUSE_LIBUSB1=1" \
-        "-Daws-greengrass-core-sdk-c_DIR=/usr/local/lib/" \
         ..
 
     - name: Run make
