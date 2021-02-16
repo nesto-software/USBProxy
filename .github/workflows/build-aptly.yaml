@@ -3,6 +3,7 @@ on:
     paths:
       - 'aptly/Dockerfile'
     branches: master
+  workflow_dispatch:
 
 jobs:
   build-aptly:

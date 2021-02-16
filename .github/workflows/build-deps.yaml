@@ -3,6 +3,7 @@ on:
     paths:
       - 'docker-crosstool-ng-arm/docker/deps.Dockerfile'
     branches: master
+  workflow_dispatch:
 
 jobs:
   build-deps:
