@@ -90,6 +90,10 @@ jobs:
         path: |
           usbproxy/*.deb
 
+    - name: Install zip to create the archive
+      run: |
+        apt-get install -y install zip
+
     - name: Create greengrass deployment package
       working-directory: usbproxy/src/build/greengrass/
       run: |
