@@ -126,16 +126,57 @@ Host Pi
 10. Open the folder inside the explorer using Ctrl+Shift+E -> */home/pi/USBProxy/*
 
 #### Installing dependencies
-1. Run `./rpi-scripts/install-all-dependencies.sh`
+- Run `./rpi-scripts/install-all-dependencies.sh`
 
-#### Compile
+#### Compiling
+1. Click on the Build button in the bottom VSCode task bar
+2. Choose a kit (e.g. GCC 7.5.0)
+3. Wait for the build to finish
+
+If the build finished without errors, you could try to install and run the binary.
+
+
+#### Install and run (with debugger attached)
+1. Connect a host device to the raspberry pi's USB C port. This could be another Linux computer or even the same device which you are using for remote development.
+2. Connect a client device to one of the raspberry pi's USB A ports. This could be a USB keyboard for example.
+3. Find out the keyboard's USB vendor and product ID:   
+```bash
+sudo apt install usbutils
+sudo lsusb -v
+```
+4. The header of the device descriptor looks something like this: `Bus 001 Device 004: ID 045e:07f8 Microsoft Corp. Wired Keyboard 600 (model 1576)` with *045e* being the vendor id and *07f8* being the product id.
+5. Open `.vscode/launch.json` and adjust the *-v* and *-p* arguments in L14 with the values obtained from step 4. Example given in L13.
+6. Open the *Run and Debug* view using Ctlr+Shift+D and start the *Install + Run* launch configuration
+
+Please note that you must run the application with root privileges. The launch configuration takes care of that for you.
+
+If you want to run the script on your own, make sure to run the install task before (i.e. Ctrl+P -> *task install* -> Enter -> Enter). This is needed to copy shared libraries into appropriate system folders. You can run the binary from the repository root by doing: `./src/build/tools/usb-mitm --help`. Do not forget to use **sudo** when running anything other than the help menu view. We need root permissions to access the usb subsystem and read from devices.
+
+> :warning: **Linking Libraries**: If you want to run the globally installed executable, you must make sure that your dynamic linker is up-to-date. Please run `sudo ldconfig` to ensure libraries can be linked correctly at runtime.
 
 Usage
 ---------
+```
+usb-mitm - command line tool for controlling USBProxy
+Usage: ./src/build/tools/usb-mitm [OPTIONS]
+Options:
+    -v <vendorId> VendorID of target device
+    -p <productId> ProductID of target device
+    -P <PluginName> Use PluginName (order is preserved)
+    -D <DeviceProxy> Use DeviceProxy
+    -H <HostProxy> Use HostProxy
+    -d Enable debug messages (-dd for increased verbosity)
+    -s Server mode, listen on port 10400
+    -c <hostname | address> Client mode, connect to server at hostname or address
+    -l Enable stream logger (logs to stderr)
+    -i Enable UDP injector
+    -x Enable Xbox360 UDPHID injector & filter
+    -k Keylogger with ROT13 filter (for demo), specify optional filename to output to instead of stderr
+    -w <filename> Write to pcap file for viewing in Wireshark
+    -h Display this message
+```
 
-> TBD: show cli parameters
-> TBD: note that -n flag is new and registers a filter
-
+There is a new option `-n` which registers the ZeroMQ filter.
 
 GPG
 ---------
@@ -160,13 +201,35 @@ IPC Example
 We provided a sample application for Node.js in the *./nodejs-client* folder.   
 The sample application connects to the USB Proxy and receives data which is read from the USB relaying.
 
+You can run the example by doing:
+1. Start the usb-mitm application, e.g. using `./scripts/usb-mitm.sh` if you already built it. Please make sure to adjust the vendor and product ids in the shell script beforehand.
+2. Install Node.js binary from [nodejs.org](https://nodejs.org/en/download/) or via nvm.
+3. Install Node.js dependencies:
+```bash
+cd nodejs-client
+npm install
+```
+4. Run the script: `node ./nodejs-client/index.js`
+5. You should see that the application receives buffers once data is transferred between your USB device and the host. In case you are using a USB keyboard as test device, you should see an incoming buffer for each keydown and keyup event.
+
 Development
 ----------
 
-> TBD: we use master, dev and feature branches
-> TBD: we publish stable versions to main debian dist and daily builds from dev branch to nighty debian distribution (both are hosted internally at Nesto)
+We use the following Git Feature-Branch-Workflow:
 
-Building a Release (for Maintainer)
+The master branch is used to build stable releases. The code in master must always compile. Only project maintainers are allowed to merge into master via a PR. Merging into master is allowed from dev branch only. Merging into master usually results into a new release version when files inside the *src* folder are modified.
+
+The dev branch is used to prepare a release. Developers are expected to merge or rebase their branch with dev frequently. The dev branch is used to build nightly releases. The code in dev should always compile. Merging into dev is allowed from all feature branches and requires a PR which must be approved by at least one project maintainer. Merging into dev results into an instant nightly release when files inside the *src* folder are modified.
+
+Developers are expected to fork the repository and to work on their own feature branches. Once the work is done, please submit a PR into dev branch. We will merge into master and create a release as soon as possible.
+
+Building a Release (for Maintainers)
 ----------
 
-> TBD
+1. Switch to dev branch and pull
+2. `./.github/create-release.sh (major|minor|patch)`
+3. git add -A && git commit && git push
+4. Create a PR into master and describe the changes; Make sure to squash the commits.
+
+Use a commit message like: `chore: prepare release for vx.y.z`.   
+Use a PR title like: `chore: release vx.y.z`.

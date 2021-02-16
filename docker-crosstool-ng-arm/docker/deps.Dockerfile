@@ -107,3 +107,9 @@ RUN make install DESTDIR=${STAGING_DIR}
 
 # install dep for debian build
 RUN apt-get install -y dh-make
+
+
+# install aws-greengrass-sdk
+
+COPY ./rpi-scripts/install-aws-greengrass-sdk.sh ./install-aws-greengrass-sdk.sh
+RUN ./install-aws-greengrass-sdk.sh
