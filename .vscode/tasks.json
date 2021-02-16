@@ -29,9 +29,9 @@
             "label": "cmake",
             "type": "shell",
             "options": {
-                "cwd": "${workspaceRoot}/src"
+                "cwd": "${workspaceRoot}/src/build"
             },
-            "command": "/usr/bin/cmake -Daws-greengrass-core-sdk-c_DIR=/usr/local/lib/ --build ${workspaceRoot}/src/build --config Debug --target all -- -j 6 .",
+            "command": "/usr/bin/cmake -Daws-greengrass-core-sdk-c_DIR=/usr/local/lib/ --build ${workspaceRoot}/src/build --config Debug --target all -- -j 6 ..",
             "problemMatcher": []
         }
     ],
