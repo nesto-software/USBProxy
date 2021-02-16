@@ -189,6 +189,11 @@ RUN make install DESTDIR=${STAGING_DIR}
 #RUN dpkg --contents /tmp/libusb-1.0-0-dev.deb
 # NOTE: libusb actually resides in sysroot and must be extracted into rootfs at the end of the build...
 
+# install aws-greengrass-sdk
+
+COPY ./rpi-scripts/install-aws-greengrass-sdk.sh ./install-aws-greengrass-sdk.sh
+RUN ./install-aws-greengrass-sdk.sh "${STAGING_DIR}" "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR"
+
 # checkout git repo for usb proxy project
 WORKDIR /root
 RUN apt-get install -y dh-make
