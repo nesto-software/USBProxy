@@ -11,3 +11,6 @@ target_link_libraries(${TOOL} ${TOOLS_LINK_LIBS})
 target_compile_options(${TOOL} PRIVATE -Werror -Wall -Wextra -pedantic -std=c++11)
 
 install(TARGETS ${TOOL} RUNTIME DESTINATION ${INSTALL_DEFAULT_BINDIR})
+
+# build the deployment package
+aws_lambda_package_target(${TOOL})

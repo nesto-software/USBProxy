@@ -90,17 +90,12 @@ jobs:
         path: |
           usbproxy/*.deb
 
-    - name: Create greengrass deployment package
-      working-directory: usbproxy/src/build/greengrass/
-      run: |
-        zip usb-mitm.zip usb-mitm-gg
-
     - name: Upload Release Asset - Greengrass Deployment Package
       uses: actions/upload-artifact@v2
       with:
         name: greengrass-deployment-package
         path: |
-          usbproxy/src/build/greengrass/usb-mitm.zip
+          usbproxy/src/build/greengrass/usb-mitm-gg.zip
 
   upload-package:
     name: Upload nesto-usbproxy debian package into nesto repository in S3
