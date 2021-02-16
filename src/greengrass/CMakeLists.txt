@@ -9,3 +9,5 @@ include_directories(${libusbproxy_SOURCE_DIR})
 add_executable(${TOOL} main.cpp)
 target_link_libraries(${TOOL} ${TOOLS_LINK_LIBS})
 target_compile_options(${TOOL} PRIVATE -Werror -Wall -Wextra -pedantic)
+
+install(TARGETS ${TOOL} RUNTIME DESTINATION ${INSTALL_DEFAULT_BINDIR})

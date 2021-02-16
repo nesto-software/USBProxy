@@ -152,6 +152,8 @@ Please note that you must run the application with root privileges. The launch c
 
 If you want to run the script on your own, make sure to run the install task before (i.e. Ctrl+P -> *task install* -> Enter -> Enter). This is needed to copy shared libraries into appropriate system folders. You can run the binary from the repository root by doing: `./src/build/tools/usb-mitm --help`. Do not forget to use **sudo** when running anything other than the help menu view. We need root permissions to access the usb subsystem and read from devices.
 
+> :warning: **Linking Libraries**: If you want to run the globally installed executable, you must make sure that your dynamic linker is up-to-date. Please run `sudo ldconfig` to ensure libraries can be linked correctly at runtime.
+
 Usage
 ---------
 ```
