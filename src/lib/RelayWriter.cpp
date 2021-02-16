@@ -166,7 +166,7 @@ void RelayWriter::relay_write() {
 			if (p->filter) {
 				for(size_t j=0; j<filters.size(); j++) {
 					if (filters[j]->test_packet(p.get())) {
-						filters[j]->filter_packet(p.get());
+						filters[j]->filter_packet(p.get(), sock);
 					}
 				}
 			}
