@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
 	cfg->set("DeviceProxy::nice", "50");
 
-	while ((opt = getopt (argc, argv, "v:p:P:D:H:dsc:C:lmik::w:hxn:")) != EOF) {
+	while ((opt = getopt (argc, argv, "v:p:P:D:H:dsc:C:lmik::w:hxnz:")) != EOF) {
 		switch (opt) {
 		case 'v':
 			cfg->set("vendorId", optarg);
@@ -158,6 +158,10 @@ int main(int argc, char **argv)
 			// used to set a delay during USB_ENDPOINT_XFER_BULK
 			// receive_data calls
 			cfg->set("DeviceProxy::nice", optarg);
+			break;
+		case 'z':
+			printf("Using the Nesto-specific ZeroMQ filter...\n");
+			cfg->add_to_vector("Plugins", "PacketFilter_ZeroMQ");
 			break;
 
 		case 'h':

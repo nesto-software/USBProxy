@@ -10,6 +10,7 @@ Manager* manager;
 zmq::context_t *ctx = new zmq::context_t();
 zmq::socket_t *frontend = new zmq::socket_t(*ctx, zmq::socket_type::xsub);
 zmq::socket_t *backend = new zmq::socket_t(*ctx, zmq::socket_type::xpub);
+static int done;
 
 void run_proxy(zmq::socket_t *frontend, zmq::socket_t *backend) {
 
@@ -19,27 +20,7 @@ void run_proxy(zmq::socket_t *frontend, zmq::socket_t *backend) {
 
 void handle_signal(int signum)
 {
-	struct sigaction action;
-	switch (signum) {
-		case SIGTERM:
-		case SIGINT:
-			if(signum == SIGTERM)
-				fprintf(stderr, "Received SIGTERM, stopping relaying...\n");
-			else
-				fprintf(stderr, "Received SIGINT, stopping relaying...\n");
-			if (manager) {manager->stop_relaying();}
-			fprintf(stderr, "Exiting\n");
-			memset(&action, 0, sizeof(struct sigaction));
-			action.sa_handler = SIG_DFL;
-			sigaction(SIGINT, &action, NULL);
-			sigaction(SIGTERM, &action, NULL);
-			break;
-		case SIGHUP:
-			fprintf(stderr, "Received SIGHUP, restarting relaying...\n");
-			if (manager) {manager->stop_relaying();}
-			if (manager) {manager->start_control_relaying();}
-			break;
-	}
+	done = 1;
 }
 
 void handler(const gg_lambda_context *cxt) {
@@ -62,16 +43,27 @@ int main() {
 	memset(&action, 0, sizeof(struct sigaction));
 	action.sa_handler = handle_signal;
 	sigaction(SIGTERM, &action, NULL);
-	sigaction(SIGHUP, &action, NULL);
 	sigaction(SIGINT, &action, NULL);
 
+	const char* vendorId = std::getenv("VENDOR_ID");
+	const char* productId = std::getenv("PRODUCT_ID");
+
     ConfigParser *cfg = new ConfigParser();
-    cfg->set("vendorId", "045e");
-    //cfg->set("productId", "");
+
+	if (vendorId != NULL) {
+		const std::string vendorIdStr = vendorId;
+    	cfg->set("vendorId", vendorIdStr);
+	}
+
+	if (productId != NULL) {
+		const std::string productIdStr = productId;
+    	cfg->set("productId", productIdStr);
+	}
+	
     cfg->set("DeviceProxy", "DeviceProxy_LibUSB");
     cfg->set("HostProxy", "HostProxy_GadgetFS");
+	cfg->set("DeviceProxy::nice", "50");
     cfg->add_to_vector("Plugins", "PacketFilter_ZeroMQ");
-
 
     (*frontend).bind("tcp://127.0.0.1:9999");
 	(*backend).bind("tcp://127.0.0.1:5678");
@@ -79,7 +71,7 @@ int main() {
 
     int status;
 	do {
-		manager=new Manager(false);
+		manager=new Manager(cfg);
 		manager->load_plugins(cfg);
 		cfg->print_config();
 
@@ -98,7 +90,7 @@ int main() {
 		delete(backend);
 		delete(manager);
 		delete(ctx);
-	} while ( status == USBM_RESET);
+	} while (!done && status == USBM_RESET);
 
     return -1;
 }
