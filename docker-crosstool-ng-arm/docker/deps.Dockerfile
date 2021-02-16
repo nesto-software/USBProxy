@@ -112,4 +112,4 @@ RUN apt-get install -y dh-make
 # install aws-greengrass-sdk
 
 COPY ./rpi-scripts/install-aws-greengrass-sdk.sh ./install-aws-greengrass-sdk.sh
-RUN ./install-aws-greengrass-sdk.sh "${STAGING_DIR}"
+RUN ./install-aws-greengrass-sdk.sh "${STAGING_DIR}" "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR"
