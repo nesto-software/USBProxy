@@ -197,7 +197,6 @@ int main(int argc, char **argv)
 		manager=new Manager(cfg);
 		manager->load_plugins(cfg);
 		cfg->print_config();
-                mtrace ();
 		manager->start_control_relaying();
 
 		while (!done && ((status = manager->get_status()) == USBM_RELAYING)) {
