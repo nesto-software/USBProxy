@@ -3,6 +3,7 @@ on:
     paths:
       - 'docker-crosstool-ng-arm/docker/toolchain.Dockerfile'
     branches: master
+  workflow_dispatch:
 
 jobs:
   build-toolchain:
