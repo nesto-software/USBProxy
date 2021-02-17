@@ -527,6 +527,22 @@ void Manager::stopEps(unsigned start)
 	hostProxy->disconnectEps();
 	std::this_thread::yield();
 
+	// TODO: release after relayer threads are closed ordinary
+	//Release interfaces
+	int ifc_idx;
+	if (device) {
+		Configuration* cfg=device->get_active_configuration();
+		int ifc_cnt=cfg->get_descriptor()->bNumInterfaces;
+		for (ifc_idx=0;ifc_idx<ifc_cnt;ifc_idx++) {
+			deviceProxy->release_interface(ifc_idx);
+		}
+	}
+
+	// TODO remove this workaround after fixing the above issue
+	// currently the app just crashes when the host device is plugged back in
+	// this is acceptable for greengrass since the app is restarted automatically by the runtime
+	exit(-1);
+
 
 	//wait for all relayer threads to stop, then delete relayer objects
 	for(i=start;i<16;i++) {
@@ -570,16 +586,6 @@ void Manager::stopEps(unsigned start)
 			}
 			delete(out_writers[i]);
 			out_writers[i]=nullptr ;
-		}
-	}
-
-	//Release interfaces
-	int ifc_idx;
-	if (device) {
-		Configuration* cfg=device->get_active_configuration();
-		int ifc_cnt=cfg->get_descriptor()->bNumInterfaces;
-		for (ifc_idx=0;ifc_idx<ifc_cnt;ifc_idx++) {
-			deviceProxy->release_interface(ifc_idx);
 		}
 	}
 
