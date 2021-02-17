@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
 	cfg->set("DeviceProxy::nice", "50");
 
-	while ((opt = getopt (argc, argv, "v:p:P:D:H:dsc:C:lmik::w:hxnz:")) != EOF) {
+	while ((opt = getopt (argc, argv, "v:p:P:D:H:dsc:C:lmik::w:hxn:z")) != EOF) {
 		switch (opt) {
 		case 'v':
 			cfg->set("vendorId", optarg);
