@@ -81,17 +81,18 @@ int main() {
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 
-		frontend->close();
-		backend->close();
-		zmq_proxy.join();
-		ctx->close();
 		manager->stop_relaying();
 		manager->cleanup();
-		delete(frontend);
-		delete(backend);
-		delete(manager);
-		delete(ctx);
 	} while (!done && status == USBM_RESET);
+
+	frontend->close();
+	backend->close();
+	zmq_proxy.join();
+	ctx->close();
+	delete(frontend);
+	delete(backend);
+	delete(manager);
+	delete(ctx);
 
     return -1;
 }

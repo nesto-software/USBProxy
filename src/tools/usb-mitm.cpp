@@ -207,16 +207,18 @@ int main(int argc, char **argv)
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 
-		frontend->close();
-		backend->close();
-		zmq_proxy.join();
-		ctx->close();
 		manager->stop_relaying();
 		manager->cleanup();
-		delete(frontend);
-		delete(backend);
-		delete(manager);
+
 	} while (!done && status == USBM_RESET);
+
+	frontend->close();
+	backend->close();
+	zmq_proxy.join();
+	ctx->close();
+	delete(frontend);
+	delete(backend);
+	delete(manager);
 	
 	if (keylog_output_file) {
 		fclose(keylog_output_file);
