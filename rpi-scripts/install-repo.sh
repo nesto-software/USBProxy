@@ -27,8 +27,8 @@ echo "Configuring the S3 transport for APT..."
 echo -e "AccessKeyId = '$ACCESS_KEY_ID'\nSecretAccessKey = '$SECRET_ACCESS_KEY'\nRegion = '$REGION'\nToken = ''" | sudo tee /etc/apt/s3auth.conf
 
 # note: please do not use nightly for production systems
-echo "deb s3://$BUCKET main aws" >> /etc/apt/sources.list
-echo "deb s3://$BUCKET nightly aws" >> /etc/apt/sources.list
+echo "deb [trusted=yes] s3://$BUCKET main aws" | sudo tee -a /etc/apt/sources.list
+echo "deb [trusted=yes] s3://$BUCKET nightly aws" | sudo tee -a /etc/apt/sources.list
 
 echo "Setting up APT keys for our S3 repo..."
 gpg --keyserver "$GPG_KEYSERVER" --receive-key "$GPG_KEY_ID"
