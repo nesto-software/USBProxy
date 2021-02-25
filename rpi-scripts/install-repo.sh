@@ -21,10 +21,10 @@ GPG_KEYSERVER=keys.openpgp.org
 
 echo "Installing tools which are needed by APT to access S3..."
 sudo apt-get update
-sudo apt-get install apt-transport-s3
+sudo apt-get install -y apt-transport-s3
 
 echo "Configuring the S3 transport for APT..."
-echo -e "AccessKeyId = '$ACCESS_KEY_ID'\nSecretAccessKey = '$SECRET_ACCESS_KEY'\nRegion = '$REGION'\nToken = ''" > /etc/apt/s3auth.conf
+echo -e "AccessKeyId = '$ACCESS_KEY_ID'\nSecretAccessKey = '$SECRET_ACCESS_KEY'\nRegion = '$REGION'\nToken = ''" | sudo tee /etc/apt/s3auth.conf
 
 # note: please do not use nightly for production systems
 echo "deb s3://$BUCKET main aws" >> /etc/apt/sources.list
@@ -32,7 +32,7 @@ echo "deb s3://$BUCKET nightly aws" >> /etc/apt/sources.list
 
 echo "Setting up APT keys for our S3 repo..."
 gpg --keyserver "$GPG_KEYSERVER" --receive-key "$GPG_KEY_ID"
-gpg --export --armor "$GPG_KEY_ID" | apt-key add -
+gpg --export --armor "$GPG_KEY_ID" | sudo apt-key add -
 
 echo "Updating the package list with the index from our S3 repo..."
 sudo apt-get update
