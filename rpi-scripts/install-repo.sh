@@ -38,4 +38,4 @@ echo "Updating the package list with the index from our S3 repo..."
 sudo apt-get update
 
 echo "Finally installing the latest version of our application..."
-sudo apt-get install $PKG_NAME
+sudo apt-get install -y $PKG_NAME
