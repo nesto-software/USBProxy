@@ -50,8 +50,8 @@ We provide instructions for each method in the following.
 
 | Method    | Command                                                                                           |
 |:----------|:--------------------------------------------------------------------------------------------------|
-| **curl**  | `sh -c "$(curl -fsSL https://raw.githubusercontent.com/nesto-software/USBProxy/master/scripts/install-from-release.sh)"` |
-| **wget**  | `sh -c "$(wget -O- https://raw.githubusercontent.com/nesto-software/USBProxy/master/scripts/install-from-release.sh)"`   |
+| **curl**  | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/nesto-software/USBProxy/master/scripts/install-from-release.sh)"` |
+| **wget**  | `bash -c "$(wget -O- https://raw.githubusercontent.com/nesto-software/USBProxy/master/scripts/install-from-release.sh)"`   |
 
 ### Install via APT Package Manager (binary)
 
@@ -60,8 +60,8 @@ We provide instructions for each method in the following.
 
 | Method    | Command                                                                                           |
 |:----------|:--------------------------------------------------------------------------------------------------|
-| **curl**  | `sh -c "$(curl -fsSL https://raw.githubusercontent.com/nesto-software/USBProxy/master/rpi-scripts/install-repo.sh)"` |
-| **wget**  | `sh -c "$(wget -O- https://raw.githubusercontent.com/nesto-software/USBProxy/master/rpi-scripts/install-repo.sh)"`   |
+| **curl**  | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/nesto-software/USBProxy/master/rpi-scripts/install-repo.sh)"` |
+| **wget**  | `bash -c "$(wget -O- https://raw.githubusercontent.com/nesto-software/USBProxy/master/rpi-scripts/install-repo.sh)"`   |
 
 ### Manually compile on x86-64 (source)
 ```bash

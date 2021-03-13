@@ -26,7 +26,7 @@ git clone https://github.com/msgpack/msgpack-c.git /tmp/msgpack-c || echo "Skipp
 (cd /tmp/msgpack-c && git checkout cpp_master && cmake -DMSGPACK_CXX17=ON . && sudo make install)
 
 echo -e "[7/8] Installing aws-greengrass-sdk\n"
-./install-aws-greengrass-sdk.sh
+$(dirname "${BASH_SOURCE[0]}")/install-aws-greengrass-sdk.sh
 
 echo -e "[8/8] Put RPi USB into client mode"
 set +e
