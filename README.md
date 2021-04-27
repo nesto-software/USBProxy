@@ -25,7 +25,7 @@ We want to share our progress on this project with the open-source community as 
 
 Scope
 -------
-- **Tested Device**: [Raspberry Pi 4B](https://www.raspberrypi.org/products/raspberry-pi-4-model-b/specifications/)
+- **Tested Device**: [Raspberry Pi 4B](https://www.raspberrypi.org/products/raspberry-pi-4-model-b/specifications/) (we currently do not work on issues for other boards)
 - **OS:** Linux
 - **Distribution**: Raspberry Pi OS / Raspbian (we use Debian's packaging system)
 - **Architecture**: armhf (we do not build for arm64 yet)
