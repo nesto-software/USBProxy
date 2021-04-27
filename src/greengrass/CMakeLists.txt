@@ -8,10 +8,6 @@ find_package(aws-greengrass-core-sdk-c REQUIRED)
 include_directories(${libusbproxy_SOURCE_DIR})
 add_executable(${TOOL} main.cpp)
 target_link_libraries(${TOOL} ${TOOLS_LINK_LIBS})
-target_compile_options(${TOOL} PRIVATE -Werror -Wall -Wextra -pedantic -std=c++11)
+target_compile_options(${TOOL} PRIVATE -Werror -Wall -Wextra -pedantic)
 
 install(TARGETS ${TOOL} RUNTIME DESTINATION ${INSTALL_DEFAULT_BINDIR})
-
-# build the deployment package
-# the following is only working with: https://github.com/awslabs/aws-lambda-cpp
-#aws_lambda_package_target(${TOOL})
