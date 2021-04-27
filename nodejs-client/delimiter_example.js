@@ -12,7 +12,7 @@ const sock = new zmq.Subscriber;
     let desired = [0x1d, 0x56, 0x31];   // toshiba is set, epson would be: [0x1b, 0x6d]
     for await (const [msg] of sock) {
        for(const c of msg) {
-          // console.log(c); // uncomment if you do not know the sequence, otherwise nothing is shown
+           console.log(c); // uncomment if you do not know the sequence, otherwise nothing is shown
 	        buf.push(c);
           const expected = desired[matched];
           if(expected == c) {
