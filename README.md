@@ -176,7 +176,7 @@ Options:
     -h Display this message
 ```
 
-There is a new option `-n` which registers the ZeroMQ filter.
+There is a new option `-z` which registers the ZeroMQ filter.
 
 GPG
 ---------

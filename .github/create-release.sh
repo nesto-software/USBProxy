@@ -2,7 +2,7 @@
 
 # USAGE: ./create-release.sh (major|minor|patch)
 
-# HOWOT: merge all feature branches into dev first
+# HOWTO: merge all feature branches into dev first
 #        run this script on dev branch
 #        create a PR to merge dev into master (will create a new release)
 

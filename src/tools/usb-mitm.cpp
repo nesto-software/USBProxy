@@ -47,6 +47,7 @@ void usage(char *arg) {
 	printf("\t-x Enable Xbox360 UDPHID injector & filter\n");
 	printf("\t-k Keylogger with ROT13 filter (for demo), specify optional filename to output to instead of stderr\n");
 	printf("\t-w <filename> Write to pcap file for viewing in Wireshark\n");
+	printf("\t-z Enable ZeroMQ filter\n");
 	printf("\t-h Display this message\n");
 }
 
