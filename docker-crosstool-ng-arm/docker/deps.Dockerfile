@@ -108,8 +108,9 @@ RUN make install DESTDIR=${STAGING_DIR}
 # install dep for debian build
 RUN apt-get install -y dh-make
 
+# install zip tool for greengrass deployment package creation
+RUN apt-get install -y zip
 
 # install aws-greengrass-sdk
-
 COPY ./rpi-scripts/install-aws-greengrass-sdk.sh ./install-aws-greengrass-sdk.sh
 RUN ./install-aws-greengrass-sdk.sh "${STAGING_DIR}" "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR"
