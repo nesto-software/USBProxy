@@ -21,8 +21,8 @@ Development Status
 <table>
 
   <tr><th>Variant</th><th>Status</th></tr>
-  <tr><td>Software</td><td>:heavy_check_mark:</td></tr>
-  <tr><td>Hardware</td><td>:soon:</td></tr>
+  <tr><td>Software</td><td align="center">:heavy_check_mark:</td></tr>
+  <tr><td>Hardware</td><td align="center">:soon:</td></tr>
 
 </table>
 
