@@ -145,12 +145,12 @@ jobs:
       run: |
         aptly publish repo -batch=true -passphrase-file="./key_passwd" -gpg-key="$GPG_KEY_ID" -component=aws -distribution=nightly nesto-pos-adapter-devel s3:nesto-debian-repo-devel:
 
-      - name: Release via gh releases with latest tag
-        uses: marvinpinto/action-automatic-releases@latest
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: nightly-latest
-          prerelease: false
-          title: UsbProxy - Nightly Binary Release (latest)
-          files: |
-            usbproxy/src/build/greengrass/usb-mitm-gg
+    - name: Release via gh releases with latest tag
+      uses: marvinpinto/action-automatic-releases@latest
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        automatic_release_tag: nightly-latest
+        prerelease: false
+        title: UsbProxy - Nightly Binary Release (latest)
+        files: |
+          usbproxy/src/build/greengrass/usb-mitm-gg
