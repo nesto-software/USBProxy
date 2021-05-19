@@ -16,6 +16,21 @@ If you want to participate, feel free to reach out!
  
 Martin Löper `<martin.loeper@nesto-software.de>`
 
+Development Status
+------
+<table>
+
+  <tr><th>Variant</th><th>Status</th></tr>
+  <tr><td>Software</td><td>:heavy_check_mark:</td></tr>
+  <tr><td>Hardware</td><td>:soon:</td></tr>
+
+</table>
+
+The software variant runs without any known issues.   
+There are some issues with clean shutdown and hotplugging though, see <a href="https://github.com/nesto-software/USBProxy/issues/28">#28</a>.
+
+We are working on a hardware variant which uses <a href="https://luna.readthedocs.io/en/latest/features.html#reference-boards">LUNA boards</a>.
+
 Mission
 -------
 Nesto is developing an [IoT solution to interface Point of Sale (POS) systems](https://nesto-software.de/datenintegration/) for the German gastronomy. One strategy of integrating legacy systems on the market, is to observe the traffic between terminal and its printer. Printers are either connected via Ethernet or USB. We strive for a reliable software solution for mirroring print jobs using a Raspberry Pi as a USB proxy device.
