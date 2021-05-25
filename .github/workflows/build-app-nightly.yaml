@@ -101,6 +101,13 @@ jobs:
         name: greengrass-deployment-package
         path: |
           usbproxy/src/build/greengrass/usb-mitm.zip
+          
+    - name: Upload Release Asset - Standalone Binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: standalone-binary
+        path: |
+          usbproxy/src/build/tools/usb-mitm
 
     - name: Release via gh releases with latest tag
       uses: marvinpinto/action-automatic-releases@latest
@@ -111,6 +118,7 @@ jobs:
         title: UsbProxy - Nightly Binary Release (latest)
         files: |
           usbproxy/src/build/greengrass/usb-mitm-gg
+          usbproxy/src/build/tools/usb-mitm
 
   upload-package:
     name: Upload nesto-usbproxy debian package into nesto repository in S3
