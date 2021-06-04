@@ -20,7 +20,7 @@ ENV PATH=${TOOLCHAIN_PATH}:${PATH}
 
 RUN mkdir -p "${STAGING_DIR}"
 
-RUN sudo apt-get update -y && apt-get install -y build-essential cmake3
+RUN sudo apt-get update -y && apt-get install -y build-essential cmake libtool
 
 # install libzmq
 RUN git clone https://github.com/zeromq/libzmq.git /tmp/libzmq && cd /tmp/libzmq && git checkout 92282785ed8e3a954d379a0ac0e784dc29d94746
@@ -59,7 +59,7 @@ RUN DESTDIR=${STAGING_DIR} make -j4 install
 RUN git clone https://github.com/msgpack/msgpack-c.git /tmp/msgpack-c
 
 # install dependencies for msgpack: doxygen and boost
-RUN sudo apt-get install doxygen
+RUN sudo apt-get install -y doxygen
 RUN git clone https://github.com/boostorg/boost.git /tmp/boost && cd /tmp/boost && git checkout eeb338c73f90028145c52ec9de07b6eb2b2ad4e8
 WORKDIR /tmp/boost
 
@@ -76,7 +76,7 @@ RUN sed -i "/using gcc/c\using gcc : arm : $TOOLCHAIN-g++ ;" project-config.jam
 RUN ./b2 -toolset=$TOOLCHAIN address-model=32 architecture=arm --prefix=$STAGING_DIR/usr/local link=static install
 
 # install gtest
-RUN apt-get install libgtest-dev
+RUN apt-get install -y libgtest-dev
 WORKDIR /usr/src/gtest
 RUN DESTDIR=$STAGING_DIR cmake CMakeLists.txt
 RUN make 
@@ -113,7 +113,8 @@ WORKDIR /tmp/libusb
 # note: we need to create a symlink with the lib name and .so suffix (unversioned) only - otherwise linker won't find it
 RUN ln -s $STAGING_DIR/usr/lib/libudev.so.1 $STAGING_DIR/usr/lib/libudev.so
 RUN NOCONFIGURE=1 ./autogen.sh
-RUN C=$TOOLCHAIN-gcc ./configure --host=$TOOLCHAIN --enable-udev=yes --enable-shared CFLAGS="--sysroot=/opt/crosstool-ng/x-tools/arm-rpi-linux-gnueabihf/arm-rpi-linux-gnueabihf/sysroot -I$STAGING_DIR/usr/include" LDFLAGS="-L$STAGING_DIR/usr/lib"
+RUN which $TOOLCHAIN-gcc
+RUN C=$TOOLCHAIN-gcc ./configure --host=$TOOLCHAIN --enable-udev=yes --enable-shared CFLAGS="--sysroot=/opt/crosstool-ng/x-tools/$TOOLCHAIN/$TOOLCHAIN/sysroot -I$STAGING_DIR/usr/include" LDFLAGS="-L$STAGING_DIR/usr/lib"
 RUN LDFLAGS="-L$STAGING_DIR/usr/lib" make
 RUN make install DESTDIR=${STAGING_DIR}
 
@@ -124,5 +125,5 @@ RUN apt-get install -y dh-make
 RUN apt-get install -y zip
 
 # install aws-greengrass-sdk
-COPY ./rpi-scripts/install-aws-greengrass-sdk.sh ./install-aws-greengrass-sdk.sh
-RUN ./install-aws-greengrass-sdk.sh "${STAGING_DIR}" "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR"
+RUN git clone https://github.com/aws/aws-greengrass-core-sdk-c.git /tmp/aws-sdk
+RUN cd /tmp/aws-sdk/ && git checkout a71613711438b48588e177f86ab322dd3992e780 && cd ./aws-greengrass-core-sdk-c && mkdir -p build && cd build && cmake "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR" .. && cmake "-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE" "-DCMAKE_FIND_ROOT_PATH=$STAGING_DIR" --build . && sudo make install DESTDIR="${STAGING_DIR}"

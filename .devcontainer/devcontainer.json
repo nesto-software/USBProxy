@@ -4,7 +4,6 @@
 	"name": "C++",
 	"build": {
 		"dockerfile": "Dockerfile",
-		"context": "..",
 
 		// Update 'VARIANT' to pick an Debian / Ubuntu OS version: debian-10, debian-9, ubuntu-20.04, ubuntu-18.04
 		"args": { "VARIANT": "debian-10" }
