@@ -81,7 +81,7 @@ jobs:
     - name: Build the debian package
       working-directory: usbproxy/src
       run: |
-        dpkg-buildpackage -d -aarmhf -tarm-rpi-linux-gnueabihf
+        dpkg-buildpackage -d -aarmhf -tarm-rpi-linux-gnueabihf -uc -us
 
     - name: Archive production artifacts
       uses: actions/upload-artifact@v2
@@ -108,6 +108,13 @@ jobs:
         name: standalone-binary
         path: |
           usbproxy/src/build/tools/usb-mitm
+
+    - name: Upload Release Asset - Debian Package
+      uses: actions/upload-artifact@v2
+      with:
+        name: nesto-usbproxy_${{ steps.version.outputs.NEW_VERSION }}_armhf.deb
+        path: |
+          usbproxy/nesto-usbproxy_${{ steps.version.outputs.NEW_VERSION }}_armhf.deb
 
     - name: Release via gh releases with latest tag
       uses: marvinpinto/action-automatic-releases@latest

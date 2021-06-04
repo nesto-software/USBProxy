@@ -73,7 +73,7 @@ jobs:
     - name: Build the debian package
       working-directory: usbproxy/src
       run: |
-        dpkg-buildpackage -d -aarmhf -tarm-rpi-linux-gnueabihf
+        dpkg-buildpackage -d -aarmhf -tarm-rpi-linux-gnueabihf -uc -us
 
     - name: Archive production artifacts
       uses: actions/upload-artifact@v2
