@@ -5,12 +5,15 @@ on:
       - 'VERSION'
     branches: master
     
+env:
+  TOOLCHAIN_RELEASE: rpi-5.10.y
+
 jobs:
   build-and-package:
     name: Build nesto-usbproxy debian package
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository_owner }}/usb-proxy-dev:latest
+      image: ghcr.io/${{ github.repository_owner }}/usb-proxy-dev:${{ env.TOOLCHAIN_RELEASE }}
       credentials:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.CR_PAT }}
