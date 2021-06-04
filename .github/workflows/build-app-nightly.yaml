@@ -112,9 +112,9 @@ jobs:
     - name: Upload Release Asset - Debian Package
       uses: actions/upload-artifact@v2
       with:
-        name: nesto-usbproxy_${{ steps.version.outputs.NEW_VERSION }}_armhf.deb
+        name: usbproxy_armhf.deb
         path: |
-          usbproxy/nesto-usbproxy_${{ steps.version.outputs.NEW_VERSION }}_armhf.deb
+          usbproxy/nesto-usbproxy_*.deb
 
     - name: Release via gh releases with latest tag
       uses: marvinpinto/action-automatic-releases@latest
