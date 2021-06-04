@@ -109,13 +109,6 @@ jobs:
         path: |
           usbproxy/src/build/tools/usb-mitm
 
-    - name: Upload Release Asset - Debian Package
-      uses: actions/upload-artifact@v2
-      with:
-        name: usbproxy_armhf.deb
-        path: |
-          usbproxy/nesto-usbproxy_*.deb
-
     - name: Release via gh releases with latest tag
       uses: marvinpinto/action-automatic-releases@latest
       with:
@@ -126,6 +119,7 @@ jobs:
         files: |
           usbproxy/src/build/greengrass/usb-mitm-gg
           usbproxy/src/build/tools/usb-mitm
+          usbproxy/*.deb
 
   upload-package:
     name: Upload nesto-usbproxy debian package into nesto repository in S3
