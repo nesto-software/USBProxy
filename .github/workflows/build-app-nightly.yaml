@@ -10,8 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  STAGING_DIR: /usr/raspberry-build/staging
-  SYSROOT: /opt/crosstool-ng/x-tools/arm-rpi-linux-gnueabihf/arm-rpi-linux-gnueabihf/sysroot
+  # currently we do not use the files in rootfs because debian packaging works differently
   ROOT_FS: /usr/raspberry-build/rootfs
 
 jobs:
@@ -19,7 +18,7 @@ jobs:
     name: Build nesto-usbproxy debian package
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository_owner }}/nesto-usbproxy-deps:latest
+      image: ghcr.io/${{ github.repository_owner }}/usb-proxy-dev:latest
       credentials:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.CR_PAT }}

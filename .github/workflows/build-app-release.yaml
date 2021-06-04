@@ -10,7 +10,7 @@ jobs:
     name: Build nesto-usbproxy debian package
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository_owner }}/nesto-usbproxy-deps:latest
+      image: ghcr.io/${{ github.repository_owner }}/usb-proxy-dev:latest
       credentials:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.CR_PAT }}
