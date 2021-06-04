@@ -13,3 +13,5 @@ override_dh_auto_configure:
 # because we skiip this step, we must figure out our shared library dependencies manually and write them into control file
 override_dh_shlibdeps:
 	@echo "Skipping dh_shlibdeps because of cross-compilation"
+
+override_dh_strip:
