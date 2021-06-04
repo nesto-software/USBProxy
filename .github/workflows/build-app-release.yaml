@@ -1,3 +1,4 @@
+name: build-binaries
 on:
   push:
     paths:
