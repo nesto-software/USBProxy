@@ -7,6 +7,7 @@ USB Proxy for Raspberry Pi (armhf)
 
 [![.github/workflows/build-app-nightly.yaml](https://github.com/nesto-software/USBProxy/workflows/.github/workflows/build-app-nightly.yaml/badge.svg?branch=dev)](https://github.com/nesto-software/USBProxy/actions/workflows/build-app-nightly.yaml)
 [![.github/workflows/build-app-release.yaml](https://github.com/nesto-software/USBProxy/workflows/.github/workflows/build-app-release.yaml/badge.svg)](https://github.com/nesto-software/USBProxy/actions/workflows/build-app-release.yaml)
+[![https://github.com/nesto-software/USBProxy2](https://img.shields.io/badge/superseded%20by-USBProxy2-yellow)](https://github.com/nesto-software/USBProxy2)
 [![https://github.com/nesto-software/ProxySuite](https://img.shields.io/badge/part%20of-ProxySuite-blue)](https://github.com/nesto-software/ProxySuite)
 
 Heads Up!
